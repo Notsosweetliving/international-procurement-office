@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { SupabaseSetup } from "@/components/supabase-setup";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { getCompanyProfile } from "@/lib/repositories/company";
+import { serverLog } from "@/lib/monitoring/logger";
 export default async function WorkspaceLayout({
   children,
 }: {
@@ -11,7 +12,12 @@ export default async function WorkspaceLayout({
   const { client, user } = await getAuthenticatedUser();
   if (!client) return <SupabaseSetup />;
   if (!user) redirect("/login");
-  const profile = await getCompanyProfile(client, user.id);
+  const profile = await getCompanyProfile(client, user.id).catch((error) => {
+    serverLog("warn", "workspace_profile_load_failed", {
+      error: error instanceof Error ? error.message : "Unknown profile error",
+    });
+    return null;
+  });
   return (
     <AppShell profile={profile} email={user.email ?? "Account"}>
       {children}

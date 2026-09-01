@@ -18,10 +18,10 @@ export default async function Dashboard() {
   const [workspaces, saved, suppliers, profile] =
     auth.client && auth.user
       ? await Promise.all([
-          listActiveBidWorkspaces(auth.client, auth.user.id),
-          listSaved(auth.client, auth.user.id),
+          listActiveBidWorkspaces(auth.client, auth.user.id).catch(() => []),
+          listSaved(auth.client, auth.user.id).catch(() => []),
           listSuppliers(auth.client, auth.user.id).catch(() => []),
-          getCompanyProfile(auth.client, auth.user.id),
+          getCompanyProfile(auth.client, auth.user.id).catch(() => null),
         ])
       : [[], [], [], null];
   return (
@@ -35,7 +35,9 @@ export default async function Dashboard() {
             your company profile.
           </p>
         </div>
-        <button className="ghost-button">Tune recommendations</button>
+        <Link className="ghost-button" href="/company#matching-inputs">
+          Tune recommendations
+        </Link>
       </header>
       <DashboardAiSearch available={isAiAvailable()} />
       {profile && profileCompleteness(profile) < 70 ? (
@@ -90,15 +92,22 @@ export default async function Dashboard() {
             </span>
             <h2>Recommended for you</h2>
           </div>
-          <span>Ranked from {result.items.length} unified notices</span>
+          {result.items.length ? <span>Ranked from {result.items.length} unified notices</span> : null}
         </div>
-        {issues.map((x) => (
-          <div className="provider-warning" key={x.source}>
-            {x.message}
+        {result.items.length && issues.length ? (
+          <div className="provider-warning compact">
+            Some sources are temporarily unavailable. Showing results from
+            working sources.
           </div>
-        ))}
-        {result.error && !result.items.length ? (
-          <div className="state-card">{result.error}</div>
+        ) : null}
+        {!result.items.length ? (
+          <div className="state-card">
+            <b>No live recommendations are available right now.</b>
+            <p>
+              Try Opportunities with a specific source, or check again shortly.
+              IPO never fabricates notices.
+            </p>
+          </div>
         ) : (
           <MatchedOpportunityList
             items={result.items}

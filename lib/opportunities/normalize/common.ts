@@ -71,3 +71,9 @@ export function selectOpportunitySources(values?: string[]) {
     ),
   ];
 }
+export function configuredDefaultSources() {
+  const sources: ("TED" | "NATO" | "UK" | "SAM")[] = ["TED", "UK"];
+  if (process.env.NATO_OPPORTUNITIES_URL?.trim()) sources.push("NATO");
+  if (process.env.SAM_API_KEY?.trim()) sources.push("SAM");
+  return sources;
+}

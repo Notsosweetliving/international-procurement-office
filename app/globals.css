@@ -68,16 +68,10 @@ button {
   line-height: 1.15;
 }
 .brand-seal {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   flex: none;
-}
-.brand-full {
-  max-width: 150px;
-}
-.brand-short {
-  display: none;
 }
 .landing {
   background: #f8f6ef;
@@ -851,15 +845,9 @@ button {
   text-decoration: underline;
 }
 @media (max-width: 900px) {
-  .brand-full {
-    display: none;
-  }
-  .brand-short {
-    display: inline;
-  }
   .mobilebar .brand-seal {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
   .sidebar {
     display: none;

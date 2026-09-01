@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { CompanyProfile } from "@/lib/opportunities/types";
 import { CompanyProfileProvider } from "./use-company-profile";
 import { Icon } from "./icons";
-import { GlobalCommand } from "./global-command";
 import Image from "next/image";
 const nav = [
   ["grid", "Intelligence", "/dashboard"],
@@ -19,12 +18,10 @@ export function Brand() {
         className="brand-seal"
         src="/ipo-logo.png"
         alt=""
-        width={48}
-        height={48}
+        width={56}
+        height={56}
         priority
       />
-      <span className="brand-full">International Procurement Office</span>
-      <span className="brand-short">IPO</span>
     </Link>
   );
 }
@@ -72,12 +69,11 @@ export function AppShell({
           </Link>
         </div>
         <main className="app-main">{children}</main>
-        <GlobalCommand />
         <nav className="mobile-nav">
           {nav.map(([i, l, h]) => (
             <Link href={h} key={h}>
               <Icon name={i} />
-              <small>{l}</small>
+              <small>{h === "/saved-searches" ? "History" : l}</small>
             </Link>
           ))}
         </nav>

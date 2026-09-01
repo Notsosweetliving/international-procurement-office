@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { validateBetaInvite } from "@/lib/beta/invites";
+import { serverLog } from "@/lib/monitoring/logger";
 export type AuthState = { error?: string; message?: string };
 export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   const db = await createClient();
@@ -13,8 +14,18 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
     return {
       error: "Enter a valid email and a password of at least 6 characters.",
     };
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+      serverLog("warn", "auth_sign_in_rejected", { error: error.message });
+      return { error: "Email or password is incorrect." };
+    }
+  } catch (error) {
+    serverLog("error", "auth_sign_in_failed", {
+      error: error instanceof Error ? error.message : "Unknown auth error",
+    });
+    return { error: "Sign in is temporarily unavailable. Please try again." };
+  }
   redirect("/dashboard");
 }
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
@@ -65,13 +76,32 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
     if (!consumed)
       return { error: "Invitation could not be consumed. Try again." };
   }
-  const { data, error } = await db.auth.signUp({ email, password });
+  let signup;
+  try {
+    signup = await db.auth.signUp({ email, password });
+  } catch (error) {
+    serverLog("error", "auth_sign_up_failed", {
+      error: error instanceof Error ? error.message : "Unknown auth error",
+    });
+    return {
+      error: "Account creation is temporarily unavailable. Please try again.",
+    };
+  }
+  const { data, error } = signup;
   if (error) return { error: error.message };
   if (data.session) redirect("/onboarding");
   return { message: "Check your email to confirm your account, then sign in." };
 }
 export async function signOut() {
   const db = await createClient();
-  if (db) await db.auth.signOut();
+  if (db) {
+    try {
+      await db.auth.signOut();
+    } catch (error) {
+      serverLog("warn", "auth_sign_out_failed", {
+        error: error instanceof Error ? error.message : "Unknown auth error",
+      });
+    }
+  }
   redirect("/login");
 }

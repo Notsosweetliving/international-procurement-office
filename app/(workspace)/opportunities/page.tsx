@@ -71,7 +71,7 @@ async function Results({ q, source }: { q: string; source: string }) {
   ]);
   const workspaces =
     auth.client && auth.user
-      ? await listActiveBidWorkspaces(auth.client, auth.user.id)
+      ? await listActiveBidWorkspaces(auth.client, auth.user.id).catch(() => [])
       : [];
   const workspaceStatuses = Object.fromEntries(
     workspaces.map((workspace) => [
@@ -99,7 +99,11 @@ async function Results({ q, source }: { q: string; source: string }) {
       <div className="results-summary">
         <div>
           <h2>{title}</h2>
-          <p>{result.items.length} unified live results</p>
+          <p>
+            {result.items.length
+              ? `${result.items.length} unified live results`
+              : "No live results"}
+          </p>
         </div>
         <span>
           {source === "all"
@@ -107,15 +111,19 @@ async function Results({ q, source }: { q: string; source: string }) {
             : SOURCES.find((x) => x.value === source)?.label}
         </span>
       </div>
-      {issues.map((x) => (
-        <div className="provider-warning" key={x.source}>
-          <b>{label(x.source)}</b> {x.message}
+      {result.items.length && issues.length ? (
+        <div className="provider-warning compact">
+          Some selected sources are temporarily unavailable. Showing verified
+          results from working sources.
         </div>
-      ))}
+      ) : null}
       {result.error && !result.items.length ? (
         <div className="state-card error-state">
-          <b>Procurement sources unavailable</b>
-          <p>{result.error}</p>
+          <b>No live opportunities are available from the selected source.</b>
+          <p>
+            Choose another source or try again shortly. IPO does not substitute
+            sample notices.
+          </p>
         </div>
       ) : result.items.length ? (
         <MatchedOpportunityList
@@ -133,14 +141,6 @@ async function Results({ q, source }: { q: string; source: string }) {
     </>
   );
 }
-const label = (source: OpportunitySource) =>
-  source === "TED"
-    ? "EU TED"
-    : source === "UK"
-      ? "UK Government"
-      : source === "SAM"
-        ? "US Federal"
-        : source;
 function Loading() {
   return (
     <div className="results-loading">

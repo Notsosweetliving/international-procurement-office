@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import {
   EMPTY_PROFILE,
-  EXAMPLE_PROFILE,
   PROFILE_STORAGE_KEY,
   isCompanyProfile,
   profileCompleteness,
+  parseCertifications,
 } from "@/lib/company/profile";
 import type { CompanyProfile } from "@/lib/opportunities/types";
 import { useCompanyProfile } from "./use-company-profile";
@@ -49,6 +49,9 @@ export function CompanyProfileForm() {
   const [draft, setDraft] = useState<CompanyProfile | null>(null);
   const [legacy, setLegacy] = useState<CompanyProfile | null>(null);
   const [status, setStatus] = useState<"" | "saving" | "saved" | "error">("");
+  const [certificationsText, setCertificationsText] = useState(
+    (profile?.certifications ?? []).join(", "),
+  );
   useEffect(() => {
     if (profile) return;
     try {
@@ -79,12 +82,16 @@ export function CompanyProfileForm() {
       const response = await fetch("/api/company", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(p),
+        body: JSON.stringify({
+          ...p,
+          certifications: parseCertifications(certificationsText),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       save(data.profile);
       setDraft(data.profile);
+      setCertificationsText(data.profile.certifications.join(", "));
       setStatus("saved");
       if (legacy) localStorage.removeItem(PROFILE_STORAGE_KEY);
       setLegacy(null);
@@ -93,7 +100,7 @@ export function CompanyProfileForm() {
     }
   };
   return (
-    <form onSubmit={submit}>
+    <form id="matching-inputs" onSubmit={submit}>
       {legacy ? (
         <div className="migration-offer">
           <div>
@@ -106,7 +113,10 @@ export function CompanyProfileForm() {
           <button
             type="button"
             className="ghost-button"
-            onClick={() => setDraft(legacy)}
+            onClick={() => {
+              setDraft(legacy);
+              setCertificationsText(legacy.certifications.join(", "));
+            }}
           >
             Import profile
           </button>
@@ -128,13 +138,6 @@ export function CompanyProfileForm() {
             <strong>{profileCompleteness(p)}%</strong>
             <span>complete</span>
           </div>
-          <button
-            type="button"
-            className="ghost-button"
-            onClick={() => setDraft(EXAMPLE_PROFILE)}
-          >
-            Use example company
-          </button>
           <button className="black-button" disabled={status === "saving"}>
             {status === "saving" ? "Saving…" : "Save profile"}
           </button>
@@ -266,16 +269,8 @@ export function CompanyProfileForm() {
             <label className="wide">
               Certifications — comma separated
               <input
-                value={p.certifications.join(", ")}
-                onChange={(e) =>
-                  update(
-                    "certifications",
-                    e.target.value
-                      .split(",")
-                      .map((x) => x.trim())
-                      .filter(Boolean),
-                  )
-                }
+                value={certificationsText}
+                onChange={(e) => setCertificationsText(e.target.value)}
               />
             </label>
             <label className="wide">
@@ -295,6 +290,11 @@ export function CompanyProfileForm() {
             </label>
           </div>
         </Form>
+      </div>
+      <div className="profile-bottom-save">
+        <button className="black-button" disabled={status === "saving"}>
+          {status === "saving" ? "Saving…" : "Save profile"}
+        </button>
       </div>
     </form>
   );

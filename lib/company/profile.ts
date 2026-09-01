@@ -54,3 +54,6 @@ export function profileCompleteness(p: CompanyProfile) {
   ];
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 }
+export function parseCertifications(value: string) {
+  return [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))];
+}

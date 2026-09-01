@@ -3,7 +3,7 @@ import { MOCK_COMPANY, MOCK_OPPORTUNITIES } from "./mock-data";
 import { providerForId, providerRegistry } from "./providers/registry";
 import { mergeConservative, sortOpportunities } from "./merge";
 import { combineProviderSettlements } from "./settle";
-import { selectOpportunitySources } from "./normalize/common";
+import { configuredDefaultSources, selectOpportunitySources } from "./normalize/common";
 import type {
   OpportunitySearchParams,
   OpportunitySearchResult,
@@ -34,7 +34,7 @@ export const mockOpportunityService: OpportunityService = {
   },
 };
 export const realSources = (sources?: OpportunitySource[]) =>
-  selectOpportunitySources(sources);
+  sources?.length ? selectOpportunitySources(sources) : configuredDefaultSources();
 export async function searchOpportunities(
   params: OpportunitySearchParams = {},
 ): Promise<OpportunitySearchResult> {

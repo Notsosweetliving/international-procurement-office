@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "./database.types";
 import { isSupabaseConfigured } from "./config";
+import { serverLog } from "@/lib/monitoring/logger";
 export async function createClient() {
   if (!isSupabaseConfigured()) return null;
   const store = await cookies();
@@ -25,9 +26,16 @@ export async function createClient() {
 }
 export async function getAuthenticatedUser() {
   const client = await createClient();
-  if (!client) return { client: null, user: null };
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  return { client, user };
+  if (!client) return { client: null, user: null, sessionError: false };
+  try {
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    return { client, user, sessionError: false };
+  } catch (error) {
+    serverLog("warn", "auth_user_lookup_failed", {
+      error: error instanceof Error ? error.message : "Unknown auth error",
+    });
+    return { client, user: null, sessionError: true };
+  }
 }

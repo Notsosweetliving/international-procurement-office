@@ -6,9 +6,11 @@ import { Brand } from "./app-shell";
 export function AuthForm({
   mode,
   betaInviteRequired = false,
+  initialError,
 }: {
   mode: "login" | "signup";
   betaInviteRequired?: boolean;
+  initialError?: string;
 }) {
   const action = mode === "login" ? signIn : signUp;
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
@@ -49,7 +51,9 @@ export function AuthForm({
               required
             />
           </label>
-          {state.error ? <div className="auth-error">{state.error}</div> : null}
+          {state.error || initialError ? (
+            <div className="auth-error">{state.error ?? initialError}</div>
+          ) : null}
           {state.message ? (
             <div className="auth-success">{state.message}</div>
           ) : null}
