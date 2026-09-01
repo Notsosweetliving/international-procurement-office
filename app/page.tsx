@@ -1,69 +1,108 @@
-import Image from "next/image";
-
+import Link from "next/link";
+import { Brand } from "@/components/app-shell";
+import { Icon } from "@/components/icons";
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="landing">
+      <header>
+        <Brand />
+        <nav>
+          <a href="#platform">Platform</a>
+          <a href="#how">How it works</a>
+          <Link href="/dashboard">Open workspace</Link>
+        </nav>
+      </header>
+      <section className="hero">
+        <div className="hero-kicker">
+          <span />
+          Global procurement intelligence
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <h1>
+          Find the government
+          <br />
+          contracts you can win.
+        </h1>
+        <p>
+          International Procurement Office turns fragmented public procurement
+          data into clear, company-specific intelligence so businesses can
+          discover, qualify, prepare and pursue opportunities across markets.
+        </p>
+        <div className="hero-actions">
+          <Link href="/dashboard">
+            Explore the workspace <Icon name="arrow" />
+          </Link>
+          <a href="#platform">See how it works</a>
         </div>
-      </main>
-    </div>
+        <div className="trust-line">
+          <span>Built for serious procurement teams</span>
+          <span>•</span>
+          <span>Public-sector intelligence</span>
+          <span>•</span>
+          <span>AI-assisted analysis</span>
+        </div>
+      </section>
+      <section className="product-preview" id="platform">
+        <div className="preview-top">
+          <span>INTELLIGENCE / RECOMMENDED</span>
+          <span>Updated today</span>
+        </div>
+        {[
+          [
+            "94%",
+            "EUROPEAN DEFENCE ORGANISATION",
+            "Supply of Ruggedised Computing Equipment",
+            "Belgium · IT & Communications · €2.8M estimated",
+            "19 days",
+          ],
+          [
+            "87%",
+            "CABINET DIGITAL SERVICES",
+            "Managed Cybersecurity Monitoring Service",
+            "United Kingdom · Cybersecurity · £1.5M estimated",
+            "12 days",
+          ],
+        ].map((x) => (
+          <div className="preview-row" key={x[0]}>
+            <b>{x[0]}</b>
+            <div>
+              <small>{x[1]}</small>
+              <h2>{x[2]}</h2>
+              <p>{x[3]}</p>
+            </div>
+            <span className="days">{x[4]}</span>
+          </div>
+        ))}
+      </section>
+      <section className="how" id="how">
+        {[
+          [
+            "01 / DISCOVER",
+            "One view across markets.",
+            "Monitor relevant public opportunities across countries and categories without navigating fragmented portals.",
+          ],
+          [
+            "02 / QUALIFY",
+            "Know where you stand.",
+            "Compare each tender with your company capabilities, regions, certifications and contract preferences.",
+          ],
+          [
+            "03 / UNDERSTAND",
+            "Turn documents into decisions.",
+            "Surface requirements, risks and important dates with AI-assisted analysis clearly labelled for review.",
+          ],
+        ].map((x) => (
+          <div key={x[0]}>
+            <small>{x[0]}</small>
+            <h3>{x[1]}</h3>
+            <p>{x[2]}</p>
+          </div>
+        ))}
+      </section>
+      <footer className="landing-footer">
+        International Procurement Office is an independent procurement
+        intelligence platform and is not affiliated with or endorsed by any
+        government agency.
+      </footer>
+    </main>
   );
 }

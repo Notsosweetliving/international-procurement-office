@@ -1,0 +1,12 @@
+.opportunity-body {
+  min-width: 0;
+  max-width: 100%;
+}
+.title-clamp {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.opportunity-card {
+  min-width: 0;
+  max-width: 100%;
+}

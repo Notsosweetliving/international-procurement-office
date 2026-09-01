@@ -1,0 +1,3 @@
+import{NextResponse,type NextRequest}from"next/server";import{refreshSession}from"@/lib/supabase/proxy";import{authGuardDecision}from"@/lib/auth/guard";
+export async function proxy(request:NextRequest){const{response,user,configured}=await refreshSession(request);if(authGuardDecision(configured,Boolean(user),request.nextUrl.pathname)==="login"){const url=request.nextUrl.clone();url.pathname="/login";url.searchParams.set("next",request.nextUrl.pathname);return NextResponse.redirect(url)}return response}
+export const config={matcher:["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]};
