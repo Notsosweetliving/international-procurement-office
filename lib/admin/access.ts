@@ -9,3 +9,4 @@ export function adminEmails() {
 export function isAdminEmail(email: string | null | undefined) {
   return Boolean(email && adminEmails().has(email.toLowerCase()));
 }
+export const canAccessProviderDiagnostics = isAdminEmail;

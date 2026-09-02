@@ -2,9 +2,17 @@ import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/admin/access";
+import {
+  getLastProviderDiagnostics,
+  providerConfiguration,
+} from "@/lib/opportunities/diagnostics";
+import { ProviderDiagnosticsPanel } from "@/components/provider-diagnostics-panel";
+
+export const runtime = "nodejs";
 export default async function Admin() {
   const { user } = await getAuthenticatedUser();
   if (!user || !isAdminEmail(user.email)) notFound();
+  const diagnostics = await getLastProviderDiagnostics();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
     key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const metrics: Record<string, number | null> = {
@@ -66,7 +74,7 @@ export default async function Admin() {
             ["TED", true],
             ["UK", true],
             ["SAM", Boolean(process.env.SAM_API_KEY)],
-            ["NATO", true],
+            ["NATO", Boolean(process.env.NATO_OPPORTUNITIES_URL)],
           ].map(([name, configured]) => (
             <p key={String(name)}>
               <b>{String(name)}</b>
@@ -80,6 +88,10 @@ export default async function Admin() {
           SAM is not probed from this page. Runtime 429 handling remains active.
         </small>
       </section>
+      <ProviderDiagnosticsPanel
+        initial={diagnostics}
+        configured={providerConfiguration()}
+      />
     </main>
   );
 }

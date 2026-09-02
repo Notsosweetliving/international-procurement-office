@@ -19,6 +19,7 @@ import { isSaved } from "@/lib/repositories/saved";
 import { getBidWorkspace } from "@/lib/repositories/bid-workspace";
 import { getCompanyProfile } from "@/lib/repositories/company";
 import { calculateOpportunityMatch } from "@/lib/matching/engine";
+export const runtime = "nodejs";
 export async function generateMetadata({
   params,
 }: PageProps<"/opportunities/[id]">): Promise<Metadata> {

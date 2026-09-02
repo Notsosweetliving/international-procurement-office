@@ -5,6 +5,11 @@ import type {
   OpportunitySearchParams,
   OpportunitySearchResult,
 } from "./types";
+import {
+  completeProviderRequest,
+  fetchProviderJson,
+  ProviderRequestError,
+} from "../diagnostics";
 const BASE = (
   process.env.UK_FTS_API_BASE_URL ??
   "https://www.find-tender.service.gov.uk/api/1.0"
@@ -15,26 +20,24 @@ const releases = (data: unknown) =>
     ? ((data as Obj).releases as unknown[])
     : [];
 async function request(path: string) {
-  const response = await fetch(BASE + path, {
+  return fetchProviderJson("UK", BASE + path, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(12000),
     next: { revalidate: 1200 },
-  });
-  if (!response.ok)
-    throw new Error(`UK Find a Tender request failed (${response.status})`);
-  return response.json() as Promise<unknown>;
+  }, { safeError: (status) => status ? `Find a Tender request failed (${status}).` : "Find a Tender request failed." });
 }
 export async function searchUkOpportunities(
   params: OpportunitySearchParams = {},
 ): Promise<OpportunitySearchResult> {
   try {
     const limit = Math.min(100, Math.max(params.limit ?? 30, 30));
-    const data = await request(
+    const { data, context } = await request(
       `/ocdsReleasePackages?limit=${limit}&stages=tender`,
     );
     let items = releases(data)
       .map(normalizeUkRelease)
       .filter((x): x is Opportunity => x !== null);
+    const normalizedCount = items.length;
     if (params.query) {
       const q = params.query.toLowerCase();
       items = items.filter((o) =>
@@ -43,24 +46,28 @@ export async function searchUkOpportunities(
           .includes(q),
       );
     }
-    return { items: items.slice(0, params.limit ?? 30), total: items.length };
+    const visible = items.slice(0, params.limit ?? 30);
+    const diagnostic = await completeProviderRequest(context, releases(data).length, normalizedCount);
+    return { items: visible, total: items.length, diagnostic, error: diagnostic.status === "failed" ? diagnostic.safeErrorMessage : undefined };
   } catch (error) {
-    if (process.env.NODE_ENV === "development")
-      console.error("[ContractOS UK]", error);
     return {
       items: [],
       total: 0,
-      error: "UK procurement source is temporarily unavailable.",
+      error: error instanceof ProviderRequestError ? error.message : "UK response processing failed.",
+      diagnostic: error instanceof ProviderRequestError ? error.diagnostic : undefined,
     };
   }
 }
 export async function getUkOpportunity(id: string) {
   if (!id.startsWith("uk-")) return null;
   try {
-    const data = await request(
+    const { data, context } = await request(
       `/ocdsReleasePackages/${encodeURIComponent(id.slice(3))}`,
     );
-    return releases(data).map(normalizeUkRelease).find(Boolean) ?? null;
+    const raw = releases(data);
+    const item = raw.map(normalizeUkRelease).find(Boolean) ?? null;
+    await completeProviderRequest(context, raw.length, item ? 1 : 0);
+    return item;
   } catch {
     return null;
   }

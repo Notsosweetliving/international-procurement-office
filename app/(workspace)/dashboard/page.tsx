@@ -9,7 +9,11 @@ import { listSaved } from "@/lib/repositories/saved";
 import { listSuppliers } from "@/lib/suppliers/repository";
 import { profileCompleteness } from "@/lib/company/profile";
 import { getCompanyProfile } from "@/lib/repositories/company";
+import { connection } from "next/server";
+
+export const runtime = "nodejs";
 export default async function Dashboard() {
+  await connection();
   const [result, auth] = await Promise.all([
     opportunityService.search({ limit: 15 }),
     getAuthenticatedUser(),

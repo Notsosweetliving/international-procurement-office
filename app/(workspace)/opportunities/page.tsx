@@ -5,6 +5,9 @@ import type { OpportunitySource } from "@/lib/opportunities/types";
 import { Icon } from "@/components/icons";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { listActiveBidWorkspaces } from "@/lib/repositories/bid-workspace";
+import { connection } from "next/server";
+
+export const runtime = "nodejs";
 const SOURCES: { value: string; label: string }[] = [
   { value: "all", label: "All sources" },
   { value: "TED", label: "EU TED" },
@@ -61,6 +64,7 @@ export default async function Opportunities(
   );
 }
 async function Results({ q, source }: { q: string; source: string }) {
+  await connection();
   const [result, auth] = await Promise.all([
     opportunityService.search({
       query: q,

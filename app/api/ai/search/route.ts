@@ -6,6 +6,7 @@ import { opportunityService } from "@/lib/opportunities/service";
 import { calculateOpportunityMatch } from "@/lib/matching/engine";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { getCompanyProfile } from "@/lib/repositories/company";
+export const runtime = "nodejs";
 export async function POST(request: Request) {
   if (!allowAiRequest("search", 10))
     return NextResponse.json(

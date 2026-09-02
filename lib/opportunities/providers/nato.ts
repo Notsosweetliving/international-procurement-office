@@ -5,44 +5,58 @@ import type {
   OpportunitySearchParams,
   OpportunitySearchResult,
 } from "./types";
+import {
+  completeProviderRequest,
+  fetchProviderJson,
+  ProviderRequestError,
+  unconfiguredProviderDiagnostic,
+} from "../diagnostics";
 type Obj = Record<string, unknown>;
 async function load() {
   const endpoint = process.env.NATO_OPPORTUNITIES_URL;
-  if (!endpoint)
-    throw new Error("No approved structured NATO endpoint is configured");
-  const response = await fetch(endpoint, {
+  if (!endpoint) {
+    const diagnostic = await unconfiguredProviderDiagnostic("NATO");
+    throw new ProviderRequestError("No approved structured NATO endpoint is configured.", diagnostic);
+  }
+  const { data, context } = await fetchProviderJson("NATO", endpoint, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(12000),
     next: { revalidate: 3600 },
-  });
-  if (!response.ok) throw new Error(`NATO feed failed (${response.status})`);
-  const data: unknown = await response.json();
-  return Array.isArray(data)
+  }, { safeError: (status) => status ? `NATO feed failed (${status}).` : "NATO feed failed." });
+  const items = Array.isArray(data)
     ? data
     : data && typeof data === "object" && Array.isArray((data as Obj).items)
       ? ((data as Obj).items as unknown[])
       : [];
+  return { items, context };
 }
 export async function searchNatoOpportunities(
   params: OpportunitySearchParams = {},
 ): Promise<OpportunitySearchResult> {
   try {
-    let items = (await load())
+    const loaded = await load();
+    let items = loaded.items
       .map(normalizeNatoOpportunity)
       .filter((x): x is Opportunity => x !== null);
+    const normalizedCount = items.length;
     if (params.query) {
       const q = params.query.toLowerCase();
       items = items.filter((o) =>
         (o.title + " " + o.summary).toLowerCase().includes(q),
       );
     }
-    return { items: items.slice(0, params.limit ?? 30), total: items.length };
-  } catch {
+    const visible = items.slice(0, params.limit ?? 30);
+    const diagnostic = await completeProviderRequest(loaded.context, loaded.items.length, normalizedCount);
+    return { items: visible, total: items.length, diagnostic, error: diagnostic.status === "failed" ? diagnostic.safeErrorMessage : undefined };
+  } catch (error) {
     return {
       items: [],
       total: 0,
       error:
-        "NATO opportunities require an approved structured feed; the official NCIA bulletin remains available.",
+        error instanceof ProviderRequestError
+          ? error.message
+          : "NATO response processing failed.",
+      diagnostic: error instanceof ProviderRequestError ? error.diagnostic : undefined,
     };
   }
 }

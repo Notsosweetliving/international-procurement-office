@@ -6,6 +6,11 @@ import type {
   OpportunitySearchResult,
   TedSearchResponse,
 } from "./types";
+import {
+  completeProviderRequest,
+  fetchProviderJson,
+  ProviderRequestError,
+} from "../diagnostics";
 const BASE = (
   process.env.TED_API_BASE_URL ?? "https://api.ted.europa.eu"
 ).replace(/\/$/, "");
@@ -39,8 +44,8 @@ async function request(
   query: string,
   page: number,
   limit: number,
-): Promise<TedSearchResponse> {
-  const response = await fetch(`${BASE}/v3/notices/search`, {
+): Promise<{ data: TedSearchResponse; context: Awaited<ReturnType<typeof fetchProviderJson>>["context"] }> {
+  const { data, context } = await fetchProviderJson("TED", `${BASE}/v3/notices/search`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
@@ -54,12 +59,9 @@ async function request(
     }),
     signal: AbortSignal.timeout(10000),
     next: { revalidate: 1800 },
-  });
-  if (!response.ok) throw new Error(`TED request failed (${response.status})`);
-  const data: unknown = await response.json();
-  if (!data || typeof data !== "object")
-    throw new Error("TED returned an invalid response");
-  return data as TedSearchResponse;
+  }, { safeError: (status) => status ? `TED request failed (${status}).` : "TED request failed." });
+  if (!data || typeof data !== "object") throw new Error("TED returned an invalid response");
+  return { data: data as TedSearchResponse, context };
 }
 export async function searchTedOpportunities(
   params: OpportunitySearchParams = {},
@@ -67,25 +69,27 @@ export async function searchTedOpportunities(
   const page = Math.max(1, Math.floor(params.page ?? 1));
   const limit = Math.min(100, Math.max(1, Math.floor(params.limit ?? 20)));
   try {
-    const data = await request(safeQuery(params.query), page, limit);
+    const { data, context } = await request(safeQuery(params.query), page, limit);
     const raw = Array.isArray(data.notices) ? data.notices : [];
     const items = raw
       .map(normalizeTedNotice)
       .filter((x): x is Opportunity => x !== null);
+    const diagnostic = await completeProviderRequest(context, raw.length, items.length);
     return {
       items,
       total:
         typeof data.totalNoticeCount === "number"
           ? data.totalNoticeCount
           : items.length,
+      diagnostic,
+      error: diagnostic.status === "failed" ? diagnostic.safeErrorMessage : undefined,
     };
   } catch (error) {
-    if (process.env.NODE_ENV === "development")
-      console.error("[ContractOS TED]", error);
     return {
       items: [],
       total: 0,
-      error: "We couldn't reach the procurement source. Try again shortly.",
+      error: error instanceof ProviderRequestError ? error.message : "TED response processing failed.",
+      diagnostic: error instanceof ProviderRequestError ? error.diagnostic : undefined,
     };
   }
 }
@@ -95,12 +99,12 @@ export async function getTedOpportunity(
   const publication = id.startsWith("ted-") ? id.slice(4) : id;
   if (tedOpportunityId(publication) !== id) return null;
   try {
-    const data = await request(`publication-number = ${publication}`, 1, 1);
+    const { data, context } = await request(`publication-number = ${publication}`, 1, 1);
     const notices = Array.isArray(data.notices) ? data.notices : [];
-    return normalizeTedNotice(notices[0]);
-  } catch (error) {
-    if (process.env.NODE_ENV === "development")
-      console.error("[ContractOS TED detail]", error);
+    const item = normalizeTedNotice(notices[0]);
+    await completeProviderRequest(context, notices.length, item ? 1 : 0);
+    return item;
+  } catch {
     return null;
   }
 }

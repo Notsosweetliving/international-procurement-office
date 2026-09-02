@@ -12,12 +12,29 @@ export interface ProviderHealth {
   status: "ok" | "unavailable" | "partial";
   resultCount: number;
   message?: string;
+  diagnostic?: ProviderDiagnostic;
+}
+export interface ProviderDiagnostic {
+  provider: Exclude<OpportunitySource, "mock">;
+  configured: boolean;
+  status: "ok" | "failed";
+  upstreamStatus?: number;
+  rawCount: number;
+  normalizedCount: number;
+  resultCount: number;
+  durationMs: number;
+  errorType?: string;
+  safeErrorMessage?: string;
+  upstreamUrl: string;
+  timeout: boolean;
+  checkedAt: string;
 }
 export interface OpportunitySearchResult {
   items: Opportunity[];
   total: number;
   error?: string;
   health?: ProviderHealth[];
+  diagnostic?: ProviderDiagnostic;
 }
 export interface OpportunityProvider {
   source: OpportunitySource;

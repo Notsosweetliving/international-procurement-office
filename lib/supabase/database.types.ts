@@ -21,6 +21,21 @@ export interface Database {
         created_at: string;
         updated_at: string;
       }>;
+      provider_diagnostics: Row<{
+        provider: string;
+        configured: boolean;
+        status: string;
+        upstream_status: number | null;
+        raw_result_count: number;
+        normalized_result_count: number;
+        result_count: number;
+        duration_ms: number;
+        error_type: string | null;
+        safe_error_message: string | null;
+        upstream_url: string;
+        timeout: boolean;
+        checked_at: string;
+      }>;
       companies: Row<{
         id: string;
         user_id: string;

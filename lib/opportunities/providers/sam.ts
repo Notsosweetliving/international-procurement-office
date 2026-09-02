@@ -5,6 +5,12 @@ import type {
   OpportunitySearchParams,
   OpportunitySearchResult,
 } from "./types.ts";
+import {
+  completeProviderRequest,
+  fetchProviderJson,
+  ProviderRequestError,
+  unconfiguredProviderDiagnostic,
+} from "../diagnostics.ts";
 
 const BASE = (
   process.env.SAM_API_BASE_URL ?? "https://api.sam.gov/opportunities/v2"
@@ -20,14 +26,6 @@ export interface SamRequestOptions {
   apiKey?: string;
   fetcher?: SamFetch;
   now?: Date;
-}
-
-class SamProviderError extends Error {
-  readonly status?: number;
-  constructor(message: string, status?: number) {
-    super(message);
-    this.status = status;
-  }
 }
 
 const dataItems = (data: unknown) =>
@@ -82,40 +80,24 @@ export function samErrorMessage(status?: number) {
   return "SAM.gov request failed.";
 }
 
-const safeRequestUrl = (params: URLSearchParams) =>
-  `${BASE}/search?${params.toString()}`;
-
 async function request(
   params: URLSearchParams,
   options: SamRequestOptions = {},
 ) {
   const key = (options.apiKey ?? process.env.SAM_API_KEY ?? "").trim();
-  if (!key) throw new SamProviderError("SAM.gov API key is not configured.");
-  if (process.env.NODE_ENV === "development")
-    console.info("SAM_API_KEY configured: yes");
+  if (!key) {
+    const diagnostic = await unconfiguredProviderDiagnostic("SAM");
+    throw new ProviderRequestError("SAM.gov API key is not configured.", diagnostic);
+  }
 
   const requestParams = new URLSearchParams(params);
   requestParams.set("api_key", key);
   const fetcher = options.fetcher ?? fetch;
-  const response = await fetcher(`${BASE}/search?${requestParams.toString()}`, {
+  return fetchProviderJson("SAM", `${BASE}/search?${requestParams.toString()}`, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(12000),
     next: { revalidate: 1200 },
-  });
-  if (!response.ok) {
-    const responseText = (await response.text()).slice(0, 2000);
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        `[SAM] HTTP ${response.status}: ${responseText || response.statusText}`,
-      );
-      console.error(`[SAM] Request: ${safeRequestUrl(params)}`);
-    }
-    throw new SamProviderError(
-      samErrorMessage(response.status),
-      response.status,
-    );
-  }
-  return response.json() as Promise<unknown>;
+  }, { fetcher, safeError: samErrorMessage, configured: true });
 }
 
 export async function searchSamOpportunitiesWith(
@@ -123,7 +105,7 @@ export async function searchSamOpportunitiesWith(
   options: SamRequestOptions = {},
 ): Promise<OpportunitySearchResult> {
   try {
-    const data = await request(
+    const { data, context } = await request(
       buildSamSearchParams(params, options.now),
       options,
     );
@@ -136,13 +118,15 @@ export async function searchSamOpportunitiesWith(
       typeof (data as Obj).totalRecords === "number"
         ? ((data as Obj).totalRecords as number)
         : items.length;
-    return { items, total };
+    const rawCount = dataItems(data).length;
+    const diagnostic = await completeProviderRequest(context, rawCount, items.length);
+    return { items, total, diagnostic, error: diagnostic.status === "failed" ? diagnostic.safeErrorMessage : undefined };
   } catch (error) {
     const message =
-      error instanceof SamProviderError
+      error instanceof ProviderRequestError
         ? error.message
         : "SAM.gov request failed.";
-    return { items: [], total: 0, error: message };
+    return { items: [], total: 0, error: message, diagnostic: error instanceof ProviderRequestError ? error.diagnostic : undefined };
   }
 }
 

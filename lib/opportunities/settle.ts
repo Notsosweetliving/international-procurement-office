@@ -31,6 +31,7 @@ export function combineProviderSettlements(
         : "ok",
       resultCount: result.items.length,
       message: result.error,
+      diagnostic: result.diagnostic,
     });
   });
   return { items, health };
