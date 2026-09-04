@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
-import { opportunityService } from "@/lib/opportunities/service";
+import { getCachedOpportunity } from "@/lib/opportunities/cache";
 import {
   ensureBidWorkspace,
   recalculateBidWorkspace,
@@ -15,6 +15,7 @@ import { isAiAvailable } from "@/lib/ai/client";
 import { getCompanyProfile } from "@/lib/repositories/company";
 import { suggestCompliance } from "@/lib/bid-workspace/compliance";
 import type { RequirementLike } from "@/lib/bid-workspace/types";
+import { serverLog } from "@/lib/monitoring/logger";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(
@@ -30,7 +31,7 @@ export async function POST(
     );
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const opportunity = await opportunityService.getById(id);
+  const opportunity = await getCachedOpportunity(client, id);
   if (!opportunity)
     return NextResponse.json(
       { error: "Opportunity not found." },
@@ -62,11 +63,14 @@ export async function POST(
       contentType: validation.mimeType,
       upsert: false,
     });
-  if (upload.error)
+  if (upload.error) {
+    const missingBucket = /bucket.*not found|not found.*bucket/i.test(upload.error.message);
+    serverLog("error", "document_upload_failed", { stage: "storage_upload", opportunity_id: id, error_type: missingBucket ? "storage_bucket_missing" : "storage_upload_rejected", safe_error_message: missingBucket ? "The tender-documents storage bucket is missing." : "Supabase Storage rejected the upload." });
     return NextResponse.json(
-      { error: "Private document upload failed." },
-      { status: 502 },
+      { error: missingBucket ? "Document storage is not configured. Please contact an administrator." : "Upload failed. Please try again." },
+      { status: missingBucket ? 503 : 502 },
     );
+  }
   const inserted = await client
     .from("tender_documents")
     .insert({
@@ -84,6 +88,7 @@ export async function POST(
     .single();
   if (inserted.error) {
     await client.storage.from("tender-documents").remove([storagePath]);
+    serverLog("error", "document_upload_failed", { stage: "document_row_persistence", opportunity_id: id, error_type: "document_row_persistence", safe_error_message: "Document metadata row could not be saved." });
     return NextResponse.json(
       { error: "Document metadata could not be saved." },
       { status: 500 },
@@ -91,11 +96,13 @@ export async function POST(
   }
   try {
     const extracted = await extractTenderDocument(buffer, validation.mimeType);
-    await client.from("tender_document_extractions").insert({
+    if (!extracted.text.trim()) throw new Error("NO_EXTRACTABLE_TEXT");
+    const extractionRow = await client.from("tender_document_extractions").insert({
       document_id: documentId,
       extraction_text: extracted.text,
       extraction_metadata: extracted.metadata,
     });
+    if (extractionRow.error) throw extractionRow.error;
     let aiWarning: string | undefined;
     if (extracted.text && isAiAvailable()) {
       try {
@@ -169,7 +176,8 @@ export async function POST(
           if (checklist.length)
             await client.from("bid_submission_items").insert(checklist);
         }
-      } catch {
+      } catch (error) {
+        serverLog("warn", "document_analysis_failed", { stage: "requirement_extraction", opportunity_id: id, error_type: "requirement_extraction_failed", safe_error_message: error instanceof Error && /validated|structured/i.test(error.message) ? "Document requirements did not match the required structure." : "Document requirement analysis failed." });
         aiWarning =
           "Text was extracted, but structured requirement extraction could not be completed.";
       }
@@ -199,17 +207,19 @@ export async function POST(
       },
       { status: 201 },
     );
-  } catch {
+  } catch (error) {
+    const noText = error instanceof Error && error.message === "NO_EXTRACTABLE_TEXT";
+    serverLog("error", "document_processing_failed", { stage: "document_extraction", opportunity_id: id, error_type: noText ? "no_extractable_text" : "extraction_failed", safe_error_message: noText ? "The document contains no extractable text." : "Document extraction failed." });
     await client
       .from("tender_documents")
       .update({
         processing_status: "failed",
-        processing_error: "Text could not be extracted automatically.",
+        processing_error: noText ? "This document contains no extractable text." : "Text could not be extracted automatically.",
       })
       .eq("id", documentId)
       .eq("user_id", user.id);
     return NextResponse.json(
-      { error: "Text could not be extracted automatically.", documentId },
+      { error: noText ? "This document contains no extractable text." : "Document processing failed. Please try again.", documentId },
       { status: 422 },
     );
   }

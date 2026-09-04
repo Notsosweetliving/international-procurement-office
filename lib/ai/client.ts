@@ -1,20 +1,21 @@
 import OpenAI from "openai";
-export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
+export const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
 export class AiUnavailableError extends Error {
   constructor() {
     super(
-      "AI features are unavailable because OPENAI_API_KEY is not configured.",
+      "AI analysis is not configured.",
     );
   }
 }
 export function isAiAvailable() {
-  return Boolean(process.env.OPENAI_API_KEY);
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 export function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) throw new AiUnavailableError();
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new AiUnavailableError();
   return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey,
     timeout: 20000,
-    maxRetries: 1,
+    maxRetries: 0,
   });
 }

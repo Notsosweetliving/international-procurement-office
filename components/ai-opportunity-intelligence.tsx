@@ -2,17 +2,18 @@
 import { useState } from "react";
 import type { Opportunity } from "@/lib/opportunities/types";
 import type { TenderAnalysis } from "@/lib/ai/schemas";
-import { compareRequirements } from "@/lib/ai/requirement-comparison";
 import { useCompanyProfile } from "./use-company-profile";
 export function AiOpportunityIntelligence({
   opportunity,
   available,
+  initialAnalysis = null,
 }: {
   opportunity: Opportunity;
   available: boolean;
+  initialAnalysis?: TenderAnalysis | null;
 }) {
   const { profile } = useCompanyProfile();
-  const [analysis, setAnalysis] = useState<TenderAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<TenderAnalysis | null>(initialAnalysis);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
@@ -31,6 +32,7 @@ export function AiOpportunityIntelligence({
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setAnalysis(data.analysis);
+      if (data.warning) setError(data.warning);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
@@ -62,9 +64,8 @@ export function AiOpportunityIntelligence({
       setChatting(false);
     }
   };
-  const review = analysis ? compareRequirements(profile, analysis) : null;
   return (
-    <section className="ai-intelligence">
+    <section className="ai-intelligence" id="ai-analysis">
       <header>
         <div>
           <span className="section-label">AI INTELLIGENCE</span>
@@ -78,7 +79,7 @@ export function AiOpportunityIntelligence({
         <div className={available ? "ai-status available" : "ai-status"}>
           {available
             ? analysis
-              ? "Analysis available"
+              ? "Analysis ready"
               : "Not yet generated"
             : "AI unavailable"}
         </div>
@@ -87,23 +88,20 @@ export function AiOpportunityIntelligence({
         <div className="state-card">
           <b>AI features are unavailable</b>
           <p>
-            Add OPENAI_API_KEY on the server to enable analysis and questions.
-            Live TED data and deterministic matching remain available.
+            AI analysis is not configured. Deterministic matching and the bid workspace remain available.
           </p>
         </div>
       ) : !analysis ? (
         <div className="analysis-start">
           <p>
-            {opportunity.summary.length < 180
-              ? "Limited source information may be available. Review the official tender documents alongside any generated analysis."
-              : "Generate a structured review of requirements, risks, dates and next steps from the available TED record."}
+            IPO will summarize the tender, identify requirements, risks and documents you may need.
           </p>
           <button className="black-button" onClick={analyze} disabled={loading}>
-            {loading ? "Analyzing opportunity…" : "Analyze opportunity"}
+            {loading ? "Analyzing tender…" : "Analyze tender with AI"}
           </button>
         </div>
       ) : (
-        <AnalysisView analysis={analysis} review={review} />
+        <AnalysisView analysis={analysis} />
       )}{" "}
       {error ? <div className="ai-error">{error}</div> : null}
       <form className="opportunity-chat" onSubmit={ask}>
@@ -137,10 +135,8 @@ export function AiOpportunityIntelligence({
 }
 function AnalysisView({
   analysis: a,
-  review,
 }: {
   analysis: TenderAnalysis;
-  review: ReturnType<typeof compareRequirements> | null;
 }) {
   return (
     <div className="analysis-content">
@@ -154,7 +150,7 @@ function AnalysisView({
         <p>{a.summary}</p>
       </Block>
       <div className="analysis-columns">
-        <Block title="Key requirements">
+        <Block title="What you need">
           {a.keyRequirements.length ? (
             <ul>
               {a.keyRequirements.map((x) => (
@@ -171,7 +167,7 @@ function AnalysisView({
             <Empty />
           )}
         </Block>
-        <Block title="Potential risks">
+        <Block title="Potential blockers">
           {a.risks.length ? (
             <ul>
               {a.risks.map((x) => (
@@ -204,14 +200,12 @@ function AnalysisView({
             <Empty />
           )}
         </Block>
-        <Block title="Certifications mentioned">
-          {a.certifications.length ? (
+        <Block title="Documents to prepare">
+          {a.submissionRequirements.length ? (
             <ul>
-              {a.certifications.map((x) => (
-                <li key={x.name}>
-                  <b>{x.name}</b>
-                  <span>{x.context ?? x.status}</span>
-                  <small>{x.status}</small>
+              {a.submissionRequirements.map((x) => (
+                <li key={x}>
+                  <span>{x}</span>
                 </li>
               ))}
             </ul>
@@ -220,28 +214,8 @@ function AnalysisView({
           )}
         </Block>
       </div>
-      <Block title="AI requirement review">
-        {review ? (
-          <div className="review-grid">
-            <Review title="Profile matches" symbol="✓" items={review.matches} />
-            <Review title="Needs review" symbol="!" items={review.review} />
-            <Review title="Unknown" symbol="?" items={review.unknown} />
-          </div>
-        ) : null}
-      </Block>
       <div className="analysis-columns">
-        <Block title="Submission checklist">
-          {a.submissionRequirements.length ? (
-            <ol>
-              {a.submissionRequirements.map((x) => (
-                <li key={x}>{x}</li>
-              ))}
-            </ol>
-          ) : (
-            <Empty />
-          )}
-        </Block>
-        <Block title="Recommended next steps">
+        <Block title="Next steps">
           <ol>
             {a.recommendedNextSteps.map((x) => (
               <li key={x}>{x}</li>
@@ -277,31 +251,6 @@ function Block({
       <h3>{title}</h3>
       {children}
     </section>
-  );
-}
-function Review({
-  title,
-  symbol,
-  items,
-}: {
-  title: string;
-  symbol: string;
-  items: string[];
-}) {
-  return (
-    <div>
-      <b>{title}</b>
-      {items.length ? (
-        items.map((x) => (
-          <p key={x}>
-            <span>{symbol}</span>
-            {x}
-          </p>
-        ))
-      ) : (
-        <small>None identified</small>
-      )}
-    </div>
   );
 }
 function Empty() {

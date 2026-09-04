@@ -101,7 +101,7 @@ export default async function Detail({
           Analysis available in your private workspace
         </div>
       ) : null}
-      <AiOpportunityIntelligence opportunity={o} available={isAiAvailable()} />
+      <AiOpportunityIntelligence opportunity={o} available={isAiAvailable()} initialAnalysis={persisted} />
       <BidWorkspace
         opportunity={o}
         initial={bidWorkspace}
