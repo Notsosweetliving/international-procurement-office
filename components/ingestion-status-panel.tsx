@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { SyncState } from "@/lib/opportunities/cache";
+import { adminSyncUrl, parseAdminSyncResponse } from "@/lib/admin/sync-client";
 
 const SOURCES = ["TED", "UK", "SAM"] as const;
 export function IngestionStatusPanel({ initial, counts }: { initial: SyncState[]; counts: Record<string, number> }) {
@@ -8,8 +9,8 @@ export function IngestionStatusPanel({ initial, counts }: { initial: SyncState[]
   async function sync(source: string) {
     setRunning(source); setError("");
     try {
-      const response = await fetch("/api/admin/sync-opportunities", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source }) });
-      const result = await response.json();
+      const response = await fetch(adminSyncUrl(source), { method: "POST" });
+      const result = await parseAdminSyncResponse(response);
       if (!response.ok) throw new Error(result.error ?? "Sync failed.");
       const now = new Date().toISOString();
       setStates((current) => current.map((row) => row.source === source ? { ...row, last_attempt_at: now, last_success_at: result.status === "success" ? now : row.last_success_at, records_fetched: result.recordsFetched, records_inserted: result.recordsInserted, records_updated: result.recordsUpdated, is_stale: result.status !== "success", last_safe_error: result.safeError ?? null, last_error_type: result.status === "success" ? null : result.status } : row));

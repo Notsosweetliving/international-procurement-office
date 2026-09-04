@@ -101,7 +101,9 @@ export default async function Admin() {
           ))}
         </div>
         <small>
-          SAM is not probed from this page. Runtime 429 handling remains active.
+          {process.env.SAM_SYNC_ENABLED?.trim().toLowerCase() === "true"
+            ? "SAM synchronization is enabled and respects upstream rate limits."
+            : "SAM synchronization is disabled."}
         </small>
       </section>
       <ProviderDiagnosticsPanel
