@@ -7,20 +7,16 @@ export default function Home() {
       <header>
         <Brand />
         <nav>
-          <a href="#platform">Platform</a>
+          <a href="#platform">Sources</a>
           <a href="#how">How it works</a>
           <Link href="/dashboard">Open workspace</Link>
         </nav>
       </header>
       <section className="hero">
-        <div className="hero-kicker">
-          <span />
-          Global procurement intelligence
-        </div>
+        <div className="hero-kicker">Global procurement intelligence</div>
         <h1>
-          Find the government
-          <br />
-          contracts you can win.
+          <span>Find the government</span>
+          <span>{" "}contracts you can win.</span>
         </h1>
         <p>
           International Procurement Office turns fragmented public procurement
@@ -36,11 +32,11 @@ export default function Home() {
       <section className="official-sources" id="platform">
         <div className="landing-section-heading">
           <span>OFFICIAL PROCUREMENT SOURCES</span>
-          <p>Normalized public procurement intelligence from established official portals.</p>
+          <p>Public notices normalized from established procurement authorities.</p>
         </div>
         <div className="source-register">
-          {[["EU", "TED", "European Union procurement notices"], ["UK", "UK Government", "Find a Tender opportunities"], ["US", "US Federal", "Federal contract opportunities"]].map(([code, name, detail]) => (
-            <article key={code}><span>{code}</span><div><h2>{name}</h2><p>{detail}</p></div></article>
+          {[["01", "EU TED", "European Union", "Procurement notices"], ["02", "UK Government", "United Kingdom", "Find a Tender"], ["03", "US Federal", "United States", "Contract opportunities"]].map(([number, name, jurisdiction, detail]) => (
+            <article key={number}><span>{number}</span><h2>{name}</h2><p>{jurisdiction}</p><small>{detail}</small></article>
           ))}
         </div>
       </section>
@@ -78,10 +74,14 @@ export default function Home() {
           </div>
         ))}
       </section>
+      <section className="credibility-strip" aria-label="Platform standards">
+        {["Official public procurement sources", "Company-specific opportunity matching", "Structured AI tender review", "Secure private workspaces"].map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </section>
       <footer className="landing-footer">
-        International Procurement Office is an independent procurement
-        intelligence platform and is not affiliated with or endorsed by any
-        government agency.
+        <span>INDEPENDENT PROCUREMENT INTELLIGENCE</span>
+        <p>International Procurement Office is an independent procurement intelligence platform and is not affiliated with or endorsed by any government agency.</p>
       </footer>
     </main>
   );

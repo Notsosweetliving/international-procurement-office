@@ -314,6 +314,150 @@ button {
   font-size: 11px;
   line-height: 1.5;
 }
+/* Institutional landing page */
+.landing > header {
+  height: 96px;
+  max-width: 1320px;
+  border-bottom-color: #bfc7cc;
+}
+.landing > header .brand-seal {
+  width: 58px;
+  height: 58px;
+}
+.landing nav {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.hero {
+  max-width: 1320px;
+  padding: 92px 28px 84px;
+  border-bottom: 1px solid #bfc7cc;
+}
+.hero-kicker {
+  display: block;
+  color: #526473;
+  letter-spacing: 0.13em;
+}
+.hero h1 {
+  max-width: 1020px;
+  margin: 31px 0 32px;
+  font-size: clamp(52px, 6.35vw, 84px);
+  font-weight: 560;
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+}
+.hero h1 span {
+  display: block;
+}
+.hero > p {
+  max-width: 625px;
+  color: #53606b;
+  font-size: 17px;
+  line-height: 1.65;
+}
+.official-sources {
+  max-width: 1320px;
+  margin: 72px auto 68px;
+  border: 0;
+  border-top: 1px solid #aeb9c0;
+  border-bottom: 1px solid #aeb9c0;
+  background: #f1f3f2;
+}
+.landing-section-heading {
+  padding: 24px 28px;
+  border-bottom-color: #c7cfd3;
+}
+.source-register article {
+  display: grid;
+  grid-template-columns: 35px 1fr;
+  gap: 7px 15px;
+  padding: 27px 28px;
+}
+.source-register article + article {
+  border-left-color: #c7cfd3;
+}
+.source-register article > span {
+  display: block;
+  grid-row: 1 / 4;
+  width: auto;
+  height: auto;
+  padding-top: 4px;
+  border: 0;
+}
+.source-register h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.source-register p {
+  font-size: 11px;
+}
+.source-register small {
+  color: #74808a;
+  font: 10px var(--font-geist-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.how {
+  max-width: 1320px;
+  gap: 0;
+}
+.how div {
+  min-width: 0;
+  padding: 24px 24px 4px;
+  border-top-color: #bfc7cc;
+}
+.how > div:not(.how-heading) + div {
+  border-left: 1px solid #d5dadd;
+}
+.how .how-heading {
+  margin-bottom: 0;
+  padding: 0 0 18px;
+  border-bottom: 0;
+}
+.how small {
+  color: #8a6f37;
+  font-size: 10px;
+}
+.how h3 {
+  margin: 22px 0 9px;
+  font-size: 19px;
+}
+.how p {
+  font-size: 13px;
+}
+.credibility-strip {
+  max-width: 1320px;
+  margin: 0 auto 72px;
+  padding: 19px 28px;
+  border-top: 1px solid #bfc7cc;
+  border-bottom: 1px solid #bfc7cc;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #e7edf1;
+}
+.credibility-strip span {
+  padding: 0 18px;
+  color: #43576a;
+  font-size: 11px;
+  text-align: center;
+}
+.credibility-strip span + span {
+  border-left: 1px solid #b8c4cc;
+}
+.landing-footer {
+  max-width: 1320px;
+}
+.landing-footer span {
+  display: block;
+  margin-bottom: 9px;
+  color: #586976;
+  font: 600 9px var(--font-geist-mono);
+  letter-spacing: 0.09em;
+}
+.landing-footer p {
+  max-width: 780px;
+  margin: 0;
+}
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -1279,5 +1423,98 @@ button {
   }
   .filters {
     max-width: 100%;
+  }
+}
+@media (max-width: 900px) {
+  .credibility-strip {
+    margin: 0 20px 58px;
+    padding: 0;
+    grid-template-columns: 1fr 1fr;
+  }
+  .credibility-strip span {
+    padding: 16px;
+  }
+  .credibility-strip span + span {
+    border-left: 0;
+  }
+  .credibility-strip span:nth-child(even) {
+    border-left: 1px solid #b8c4cc;
+  }
+  .credibility-strip span:nth-child(n + 3) {
+    border-top: 1px solid #b8c4cc;
+  }
+}
+@media (max-width: 600px) {
+  .landing > header {
+    height: 76px;
+    padding: 0 20px;
+  }
+  .landing > header .brand-seal {
+    width: 50px;
+    height: 50px;
+  }
+  .landing nav {
+    gap: 0;
+  }
+  .landing nav a:last-child {
+    padding: 11px 14px;
+  }
+  .hero {
+    padding: 54px 20px 58px;
+  }
+  .hero h1 {
+    margin: 24px 0 25px;
+    font-size: clamp(38px, 10.7vw, 46px);
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+  }
+  .hero h1 span {
+    display: inline;
+  }
+  .hero > p {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .official-sources {
+    margin-top: 48px;
+    margin-bottom: 50px;
+  }
+  .source-register article {
+    padding: 20px;
+  }
+  .how {
+    gap: 0;
+  }
+  .how > div:not(.how-heading) {
+    padding: 19px 4px 18px;
+    display: grid;
+    grid-template-columns: 34px 92px 1fr;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .how > div:not(.how-heading) + div {
+    border-left: 0;
+  }
+  .how h3,
+  .how p {
+    margin: 0;
+  }
+  .how p {
+    line-height: 1.5;
+  }
+  .credibility-strip {
+    grid-template-columns: 1fr;
+  }
+  .credibility-strip span,
+  .credibility-strip span:nth-child(even) {
+    border-left: 0;
+    text-align: left;
+  }
+  .credibility-strip span + span {
+    border-top: 1px solid #b8c4cc;
+  }
+  .landing-footer {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 }
