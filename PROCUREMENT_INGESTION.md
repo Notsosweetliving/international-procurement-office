@@ -14,7 +14,7 @@ TED, Find a Tender and SAM reuse the existing provider adapters and shared `Oppo
 
 - TED: at most `PROCUREMENT_SYNC_MAX_REQUESTS_PER_RUN` requests (default 2) per run, 100 notices per page.
 - UK: one bounded 100-record request per run because the current verified FTS endpoint supplies the recent release package page.
-- SAM: disabled by default. Set `SAM_SYNC_ENABLED=true` only after adding a server-side `SAM_API_KEY`. It defaults to one request and a 90-day lookback. A 429 stops immediately, performs no deletion, preserves all cached US records and marks SAM stale.
+- SAM: disabled by default. Set `SAM_SYNC_ENABLED=true` only after adding a server-side `SAM_API_KEY`. It defaults to one request and a 30-day lookback. A 429 stops immediately, performs no deletion, preserves all cached US records and marks SAM stale.
 - NATO: integration-ready only. IPO does not scrape NATO. The user interface labels it “coming soon” until an approved structured feed is configured.
 
 ## Triggers and authorization
@@ -32,7 +32,7 @@ Vercel invokes `GET /api/internal/sync-opportunities`. The route fails closed un
 3. Add a strong `CRON_SECRET` in Vercel Production. Vercel Cron sends it as a bearer token.
 4. Configure `ADMIN_EMAILS` for manual admin sync.
 5. Leave `TED_API_BASE_URL` and `UK_FTS_API_BASE_URL` unset unless overriding their official defaults.
-6. For SAM, add `SAM_API_KEY`, set `SAM_SYNC_ENABLED=true`, and keep `SAM_SYNC_MAX_REQUESTS_PER_RUN=1` initially. Optionally set `SAM_SYNC_LOOKBACK_DAYS` (default 90).
+6. For SAM, add `SAM_API_KEY`, set `SAM_SYNC_ENABLED=true`, and keep `SAM_SYNC_MAX_REQUESTS_PER_RUN=1` initially. Optionally set `SAM_SYNC_LOOKBACK_DAYS` (default 30).
 7. Deploy, open `/admin`, and run TED then UK once to seed the cache. Run SAM once only when quota is available.
 8. Verify `/opportunities`, `/dashboard`, one detail page, and `/api/ai/search` read cached notices even if provider access is unavailable.
 

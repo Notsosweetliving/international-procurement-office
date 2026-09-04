@@ -4,7 +4,7 @@ import type { SyncState } from "@/lib/opportunities/cache";
 import { adminSyncUrl, parseAdminSyncResponse } from "@/lib/admin/sync-client";
 
 const SOURCES = ["TED", "UK", "SAM"] as const;
-export function IngestionStatusPanel({ initial, counts }: { initial: SyncState[]; counts: Record<string, number> }) {
+export function IngestionStatusPanel({ initial, counts, samConfigured, samEnabled }: { initial: SyncState[]; counts: Record<string, number>; samConfigured: boolean; samEnabled: boolean }) {
   const [states, setStates] = useState(initial), [running, setRunning] = useState<string | null>(null), [error, setError] = useState("");
   async function sync(source: string) {
     setRunning(source); setError("");
@@ -18,11 +18,14 @@ export function IngestionStatusPanel({ initial, counts }: { initial: SyncState[]
   }
   return <section><h2>Procurement ingestion</h2>{error ? <div className="auth-error">{error}</div> : null}<div className="provider-diagnostics-table">
     {SOURCES.map((source) => { const state = states.find((x) => x.source === source); return <article key={source}><h3>{source}</h3><dl>
+      {source === "SAM" ? <><div><dt>Configured</dt><dd>{samConfigured ? "Yes" : "No"}</dd></div><div><dt>Enabled</dt><dd>{samEnabled ? "Yes" : "No"}</dd></div></> : null}
       <div><dt>Last successful sync</dt><dd>{state?.last_success_at ? new Date(state.last_success_at).toLocaleString() : "Never"}</dd></div>
+      <div><dt>Last attempt</dt><dd>{state?.last_attempt_at ? new Date(state.last_attempt_at).toLocaleString() : "Never"}</dd></div>
       <div><dt>Records cached</dt><dd>{counts[source] ?? 0}</dd></div>
       <div><dt>Freshness</dt><dd>{state?.is_stale ? "Stale" : "Current"}</dd></div>
       <div><dt>Last fetched</dt><dd>{state?.records_fetched ?? 0}</dd></div>
-    </dl>{state?.last_safe_error ? <p className="diagnostic-error">{state.last_safe_error}</p> : null}<button className="black-button" disabled={Boolean(running)} onClick={() => sync(source)}>{running === source ? "Syncing…" : `Sync ${source}`}</button></article>; })}
+      {source === "SAM" ? <><div><dt>Upstream status</dt><dd>{state?.upstream_http_status ?? "—"}</dd></div><div><dt>Error type</dt><dd>{state?.last_error_type ?? "—"}</dd></div><div><dt>Safe error message</dt><dd>{state?.last_safe_error ?? "—"}</dd></div></> : null}
+    </dl>{state?.last_safe_error ? <p className="diagnostic-error">{state.last_safe_error}</p> : null}<button className="black-button" disabled={Boolean(running) || (source === "SAM" && !samEnabled)} onClick={() => sync(source)}>{running === source ? "Syncing…" : `Sync ${source}`}</button>{source === "SAM" ? <small>“Configured” means credentials are available; “Stale” means no recent successful refresh.</small> : null}</article>; })}
     <article><h3>NATO</h3><p>Integration-ready. No approved feed configured and no scraping is performed.</p></article>
   </div></section>;
 }

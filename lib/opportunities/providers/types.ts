@@ -32,6 +32,11 @@ export interface ProviderDiagnostic {
   upstreamUrl: string;
   timeout: boolean;
   checkedAt: string;
+  errorName?: string;
+  errorCode?: string;
+  causeName?: string;
+  causeCode?: string;
+  causeMessage?: string;
 }
 export interface OpportunitySearchResult {
   items: Opportunity[];

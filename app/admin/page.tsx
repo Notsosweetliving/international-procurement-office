@@ -110,7 +110,12 @@ export default async function Admin() {
         initial={diagnostics}
         configuration={providerConfiguration()}
       />
-      <IngestionStatusPanel initial={syncStates} counts={cacheCounts} />
+      <IngestionStatusPanel
+        initial={syncStates}
+        counts={cacheCounts}
+        samConfigured={Boolean(process.env.SAM_API_KEY?.trim())}
+        samEnabled={process.env.SAM_SYNC_ENABLED?.trim().toLowerCase() === "true"}
+      />
     </main>
   );
 }

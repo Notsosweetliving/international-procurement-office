@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { adminSyncUrl, parseAdminSyncResponse } from "../lib/admin/sync-client.ts";
 import { validateIngestionConfig } from "../lib/ingestion/config-validation.ts";
+import { samSyncLookbackDays, samSyncMaxRequests } from "../lib/ingestion/config.ts";
 
 test("admin TED, UK and SAM requests use a valid relative POST URL", () => {
   assert.equal(adminSyncUrl("TED"), "/api/admin/sync-opportunities?source=TED");
@@ -50,4 +51,20 @@ test("manual-sync diagnostics cover every safe server stage", () => {
   const route = readFileSync("app/api/admin/sync-opportunities/route.ts", "utf8");
   for (const event of ["admin_sync_started", "admin_sync_authenticated", "admin_sync_source_validated", "admin_sync_ingestion_started", "admin_sync_ingestion_completed", "admin_sync_failed"])
     assert.match(route, new RegExp(event));
+});
+
+test("SAM defaults to one request and a 30-day lookback", () => {
+  const oldRequests = process.env.SAM_SYNC_MAX_REQUESTS_PER_RUN, oldLookback = process.env.SAM_SYNC_LOOKBACK_DAYS;
+  delete process.env.SAM_SYNC_MAX_REQUESTS_PER_RUN; delete process.env.SAM_SYNC_LOOKBACK_DAYS;
+  try { assert.equal(samSyncMaxRequests(), 1); assert.equal(samSyncLookbackDays(), 30); }
+  finally { if (oldRequests === undefined) delete process.env.SAM_SYNC_MAX_REQUESTS_PER_RUN; else process.env.SAM_SYNC_MAX_REQUESTS_PER_RUN = oldRequests; if (oldLookback === undefined) delete process.env.SAM_SYNC_LOOKBACK_DAYS; else process.env.SAM_SYNC_LOOKBACK_DAYS = oldLookback; }
+});
+
+test("SAM upstream status is persisted and rendered for admins", () => {
+  const sync = readFileSync("lib/ingestion/sync-provider.ts", "utf8");
+  const panel = readFileSync("components/ingestion-status-panel.tsx", "utf8");
+  const migration = readFileSync("supabase/migrations/202609040002_sam_sync_diagnostics.sql", "utf8");
+  assert.match(sync, /upstream_http_status/);
+  assert.match(migration, /upstream_http_status integer/);
+  for (const label of ["Upstream status", "Error type", "Safe error message"]) assert.match(panel, new RegExp(label));
 });

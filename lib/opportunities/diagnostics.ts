@@ -66,6 +66,7 @@ export async function fetchProviderJson(
     fetcher?: Fetcher;
     safeError: (status?: number) => string;
     configured?: boolean;
+    errorTypeForStatus?: (status: number) => string;
   },
 ): Promise<{ data: unknown; context: ProviderRequestContext }> {
   const startedAt = Date.now();
@@ -83,18 +84,20 @@ export async function fetchProviderJson(
     response = await (options.fetcher ?? fetch)(upstreamUrl, init);
   } catch (error) {
     const timeout = isTimeout(error);
+    const fetchFailure = provider === "SAM" ? safeFetchError(error) : undefined;
     const diagnostic = makeDiagnostic({
       provider,
       status: "failed",
       rawCount: 0,
       normalizedCount: 0,
       durationMs: Date.now() - startedAt,
-      errorType: timeout ? "timeout" : "network_error",
-      safeErrorMessage: timeout ? "The upstream request timed out." : options.safeError(),
+      errorType: timeout ? "timeout" : fetchFailure ? "fetch_error" : "network_error",
+      safeErrorMessage: timeout ? "The upstream request timed out." : fetchFailure?.message ?? options.safeError(),
       upstreamUrl: safeUrl,
       timeout,
       checkedAt,
       configured: options.configured ?? providerConfiguration()[provider],
+      ...fetchFailure?.fields,
     });
     await recordProviderDiagnostic(diagnostic);
     throw new ProviderRequestError(diagnostic.safeErrorMessage ?? "Provider request failed.", diagnostic);
@@ -115,7 +118,7 @@ export async function fetchProviderJson(
       rawCount: 0,
       normalizedCount: 0,
       durationMs: Date.now() - startedAt,
-      errorType: response.status === 429 ? "rate_limited" : "http_error",
+      errorType: options.errorTypeForStatus?.(response.status) ?? (response.status === 429 ? "rate_limited" : "http_error"),
       safeErrorMessage: options.safeError(response.status),
       upstreamUrl: safeUrl,
       timeout: false,
@@ -240,6 +243,11 @@ async function recordProviderDiagnostic(diagnostic: ProviderDiagnostic) {
     upstream_http_status: diagnostic.upstreamStatus,
     upstream_url: diagnostic.upstreamUrl,
     timeout: diagnostic.timeout,
+    error_name: diagnostic.errorName,
+    error_code: diagnostic.errorCode,
+    cause_name: diagnostic.causeName,
+    cause_code: diagnostic.causeCode,
+    cause_message: diagnostic.causeMessage,
   });
   const db = diagnosticsClient();
   if (!db) return;
@@ -275,6 +283,18 @@ function diagnosticsClient() {
 
 function isTimeout(error: unknown) {
   return error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+}
+
+type ErrorLike = { name?: unknown; code?: unknown; message?: unknown; cause?: unknown };
+export function safeFetchError(error: unknown) {
+  const value = error && typeof error === "object" ? error as ErrorLike : {};
+  const cause = value.cause && typeof value.cause === "object" ? value.cause as ErrorLike : {};
+  const string = (field: unknown) => typeof field === "string" && field.trim() ? field.trim().slice(0, 200) : undefined;
+  const fields = {
+    errorName: string(value.name), errorCode: string(value.code),
+    causeName: string(cause.name), causeCode: string(cause.code), causeMessage: string(cause.message),
+  };
+  return { fields, message: fields.causeCode ?? fields.errorCode ?? fields.causeName ?? fields.errorName ?? "SAM fetch failed before receiving a response." };
 }
 
 function providerConfigurationFlags(provider: Provider) {

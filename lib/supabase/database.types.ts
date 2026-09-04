@@ -28,6 +28,7 @@ export interface Database {
         source: string; last_attempt_at: string | null; last_success_at: string | null;
         last_error_type: string | null; last_safe_error: string | null; records_fetched: number;
         records_inserted: number; records_updated: number; is_stale: boolean; updated_at: string;
+        upstream_http_status: number | null;
       }>;
       profiles: Row<{
         id: string;

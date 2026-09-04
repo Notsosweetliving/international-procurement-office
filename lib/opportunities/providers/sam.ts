@@ -11,11 +11,12 @@ import {
   ProviderRequestError,
   unconfiguredProviderDiagnostic,
 } from "../diagnostics.ts";
+import { serverLog } from "../../monitoring/logger.ts";
 
 const BASE = (
   process.env.SAM_API_BASE_URL ?? "https://api.sam.gov/opportunities/v2"
 ).replace(/\/$/, "");
-const DEFAULT_WINDOW_DAYS = 90;
+const DEFAULT_WINDOW_DAYS = 30;
 type Obj = Record<string, unknown>;
 type SamFetch = (
   input: string,
@@ -81,6 +82,14 @@ export function samErrorMessage(status?: number) {
   return "SAM.gov request failed.";
 }
 
+export function samErrorType(status: number) {
+  if (status === 400) return "bad_request";
+  if (status === 403) return "forbidden";
+  if (status === 429) return "rate_limited";
+  if (status >= 500) return "upstream_error";
+  return "http_error";
+}
+
 async function request(
   params: URLSearchParams,
   options: SamRequestOptions = {},
@@ -93,12 +102,20 @@ async function request(
 
   const requestParams = new URLSearchParams(params);
   requestParams.set("api_key", key);
+  serverLog("info", "sam_sync_request", {
+    source: "SAM",
+    endpoint: `${BASE}/search`,
+    postedFrom: requestParams.get("postedFrom"),
+    postedTo: requestParams.get("postedTo"),
+    limit: requestParams.get("limit"),
+    offset: requestParams.get("offset"),
+  });
   const fetcher = options.fetcher ?? fetch;
   return fetchProviderJson("SAM", `${BASE}/search?${requestParams.toString()}`, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(12000),
     next: { revalidate: 1200 },
-  }, { fetcher, safeError: samErrorMessage, configured: true });
+  }, { fetcher, safeError: samErrorMessage, configured: true, errorTypeForStatus: samErrorType });
 }
 
 export async function searchSamOpportunitiesWith(

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeSamNotice } from "../lib/opportunities/normalize/sam.ts";
-import { buildSamSearchParams, formatSamDate, samPostedDateRange, searchSamOpportunitiesWith } from "../lib/opportunities/providers/sam.ts";
+import { buildSamSearchParams, formatSamDate, samPostedDateRange, samErrorType, searchSamOpportunitiesWith } from "../lib/opportunities/providers/sam.ts";
 
 const liveShape = {
   noticeId: "abc-123",
@@ -32,7 +32,7 @@ test("SAM date range is capped at one year and mandatory parameters are present"
   const range = samPostedDateRange(new Date(2026, 7, 31), 900);
   assert.deepEqual(range, { postedFrom: "08/31/2025", postedTo: "08/31/2026" });
   const query = buildSamSearchParams({}, new Date(2026, 7, 31));
-  assert.equal(query.get("postedFrom"), "06/02/2026");
+  assert.equal(query.get("postedFrom"), "08/01/2026");
   assert.equal(query.get("postedTo"), "08/31/2026");
   assert.equal(query.has("api_key"), false);
 });
@@ -67,6 +67,8 @@ for (const [status, message] of [
     const result = await searchSamOpportunitiesWith({}, { apiKey: "test-key", fetcher: async () => new Response("safe upstream message", { status }) });
     assert.equal(result.error, message);
     assert.deepEqual(result.items, []);
+    assert.equal(result.diagnostic?.upstreamStatus, status);
+    assert.equal(result.diagnostic?.errorType, samErrorType(status));
   });
 }
 
@@ -74,6 +76,23 @@ test("SAM zero results remains a healthy response", async () => {
   const result = await searchSamOpportunitiesWith({ query: "no-such-title" }, { apiKey: "test-key", fetcher: async () => jsonResponse({ totalRecords: 0, opportunitiesData: [] }) });
   assert.equal(result.total, 0);
   assert.equal(result.error, undefined);
+});
+
+test("SAM fetch failures preserve a safe nested cause without API keys", async () => {
+  const cause = Object.assign(new Error("connect timed out"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+  const result = await searchSamOpportunitiesWith({}, { apiKey: "never-log-this-key", fetcher: async () => { throw Object.assign(new TypeError("fetch failed"), { cause }); } });
+  assert.equal(result.diagnostic?.upstreamStatus, undefined);
+  assert.equal(result.diagnostic?.errorType, "fetch_error");
+  assert.equal(result.diagnostic?.causeCode, "UND_ERR_CONNECT_TIMEOUT");
+  assert.equal(result.error, "UND_ERR_CONNECT_TIMEOUT");
+  assert.doesNotMatch(JSON.stringify(result.diagnostic), /never-log-this-key/);
+});
+
+test("SAM timeout remains classified and preserves safe cause metadata", async () => {
+  const result = await searchSamOpportunitiesWith({}, { apiKey: "test-key", fetcher: async () => { throw Object.assign(new DOMException("timed out", "AbortError"), { cause: { code: "UND_ERR_CONNECT_TIMEOUT", message: "connection timeout" } }); } });
+  assert.equal(result.diagnostic?.errorType, "timeout");
+  assert.equal(result.diagnostic?.causeCode, "UND_ERR_CONNECT_TIMEOUT");
+  assert.equal(result.error, "The upstream request timed out.");
 });
 
 test("current SAM v2 response shape normalizes records and misspelled deadline", async () => {

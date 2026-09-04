@@ -112,7 +112,9 @@ async function Results({ q, source }: { q: string; source: string }) {
         <span>
           {source === "all"
             ? freshnessLabel(states)
-            : SOURCES.find((x) => x.value === source)?.label}
+            : source === "SAM" && result.items.length
+              ? `US Federal · ${freshnessLabel(states, "SAM").replace(/^Updated /, "last refreshed ")}`
+              : SOURCES.find((x) => x.value === source)?.label}
         </span>
       </div>
       {result.items.length ? (
@@ -122,9 +124,9 @@ async function Results({ q, source }: { q: string; source: string }) {
         />
       ) : (
         <div className="state-card">
-          <b>No matching opportunities found.</b>
+          <b>{source === "SAM" ? "US Federal data is temporarily delayed" : "No matching opportunities found."}</b>
           <p>
-            Try a broader keyword such as software, construction or vehicles.
+            {source === "SAM" ? "Previously cached opportunities will remain available after a successful refresh." : "Try a broader keyword such as software, construction or vehicles."}
           </p>
         </div>
       )}
