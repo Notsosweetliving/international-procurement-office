@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { MatchedOpportunityList } from "@/components/matched-opportunity-list";
-import { opportunityService } from "@/lib/opportunities/service";
+import { freshnessLabel, listSyncStates, searchCachedOpportunities } from "@/lib/opportunities/cache";
 import type { OpportunitySource } from "@/lib/opportunities/types";
 import { Icon } from "@/components/icons";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
@@ -11,12 +11,11 @@ export const runtime = "nodejs";
 const SOURCES: { value: string; label: string }[] = [
   { value: "all", label: "All sources" },
   { value: "TED", label: "EU TED" },
-  { value: "NATO", label: "NATO" },
   { value: "UK", label: "UK Government" },
   { value: "SAM", label: "US Federal" },
 ];
 const validSource = (value: unknown): OpportunitySource[] | undefined =>
-  typeof value === "string" && ["TED", "NATO", "UK", "SAM"].includes(value)
+  typeof value === "string" && ["TED", "UK", "SAM"].includes(value)
     ? [value as OpportunitySource]
     : undefined;
 export default async function Opportunities(
@@ -32,7 +31,7 @@ export default async function Opportunities(
           <div className="eyebrow">GLOBAL PROCUREMENT / OFFICIAL SOURCES</div>
           <h1>Opportunities</h1>
           <p>
-            Search EU, NATO, UK and US federal public procurement in one
+            Search EU, UK and US federal public procurement in one
             workspace.
           </p>
         </div>
@@ -65,14 +64,15 @@ export default async function Opportunities(
 }
 async function Results({ q, source }: { q: string; source: string }) {
   await connection();
-  const [result, auth] = await Promise.all([
-    opportunityService.search({
+  const auth = await getAuthenticatedUser();
+  const [result, states] = auth.client ? await Promise.all([
+    searchCachedOpportunities(auth.client, {
       query: q,
       sources: validSource(source),
       limit: 20,
     }),
-    getAuthenticatedUser(),
-  ]);
+    listSyncStates(auth.client),
+  ]) : [{ items: [], total: 0 }, []];
   const workspaces =
     auth.client && auth.user
       ? await listActiveBidWorkspaces(auth.client, auth.user.id).catch(() => [])
@@ -85,8 +85,7 @@ async function Results({ q, source }: { q: string; source: string }) {
   );
   const title = q
     ? `${q[0]?.toUpperCase() ?? ""}${q.slice(1)} opportunities`
-    : "Live opportunities";
-  const issues = result.health?.filter((x) => x.status !== "ok") ?? [];
+    : "Procurement opportunities";
   return (
     <>
       <div className="source-pills">
@@ -99,44 +98,31 @@ async function Results({ q, source }: { q: string; source: string }) {
             {x.label}
           </a>
         ))}
+        <span className="source-coming-soon">NATO — coming soon</span>
       </div>
       <div className="results-summary">
         <div>
           <h2>{title}</h2>
           <p>
             {result.items.length
-              ? `${result.items.length} unified live results`
-              : "No live results"}
+              ? `${result.items.length} cached procurement results`
+              : "No matching opportunities found"}
           </p>
         </div>
         <span>
           {source === "all"
-            ? "EU TED · NATO · UK GOV · US FEDERAL"
+            ? freshnessLabel(states)
             : SOURCES.find((x) => x.value === source)?.label}
         </span>
       </div>
-      {result.items.length && issues.length ? (
-        <div className="provider-warning compact">
-          Some selected sources are temporarily unavailable. Showing verified
-          results from working sources.
-        </div>
-      ) : null}
-      {result.error && !result.items.length ? (
-        <div className="state-card error-state">
-          <b>No live opportunities are available from the selected source.</b>
-          <p>
-            Choose another source or try again shortly. IPO does not substitute
-            sample notices.
-          </p>
-        </div>
-      ) : result.items.length ? (
+      {result.items.length ? (
         <MatchedOpportunityList
           items={result.items}
           workspaceStatuses={workspaceStatuses}
         />
       ) : (
         <div className="state-card">
-          <b>No opportunities matched your search.</b>
+          <b>No matching opportunities found.</b>
           <p>
             Try a broader keyword such as software, construction or vehicles.
           </p>

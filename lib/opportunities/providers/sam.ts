@@ -26,6 +26,7 @@ export interface SamRequestOptions {
   apiKey?: string;
   fetcher?: SamFetch;
   now?: Date;
+  lookbackDays?: number;
 }
 
 const dataItems = (data: unknown) =>
@@ -106,7 +107,7 @@ export async function searchSamOpportunitiesWith(
 ): Promise<OpportunitySearchResult> {
   try {
     const { data, context } = await request(
-      buildSamSearchParams(params, options.now),
+      buildSamSearchParams(params, options.now, options.lookbackDays),
       options,
     );
     const items = dataItems(data)

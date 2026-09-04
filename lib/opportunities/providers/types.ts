@@ -6,6 +6,10 @@ export interface OpportunitySearchParams {
   categories?: string[];
   page?: number;
   limit?: number;
+  minValue?: number;
+  maxValue?: number;
+  deadlineBefore?: string;
+  sort?: "newest" | "deadline" | "value_desc";
 }
 export interface ProviderHealth {
   source: OpportunitySource;

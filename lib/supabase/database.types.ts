@@ -14,6 +14,21 @@ type Row<T> = {
 export interface Database {
   public: {
     Tables: {
+      procurement_opportunities: Row<{
+        id: string; source: string; source_opportunity_id: string; title: string;
+        description: string | null; buyer_name: string | null; buyer_country: string | null;
+        procurement_country: string | null; category: string | null; classification_codes: Json | null;
+        estimated_value_min: number | null; estimated_value_max: number | null; currency: string | null;
+        published_at: string | null; deadline_at: string | null; procedure_type: string | null;
+        source_url: string | null; source_metadata: Json | null; source_updated_at: string | null;
+        first_seen_at: string; last_seen_at: string; is_active: boolean; created_at: string;
+        updated_at: string; search_vector: unknown;
+      }>;
+      procurement_source_sync_state: Row<{
+        source: string; last_attempt_at: string | null; last_success_at: string | null;
+        last_error_type: string | null; last_safe_error: string | null; records_fetched: number;
+        records_inserted: number; records_updated: number; is_stale: boolean; updated_at: string;
+      }>;
       profiles: Row<{
         id: string;
         email: string;

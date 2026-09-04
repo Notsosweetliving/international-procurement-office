@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DashboardAiSearch } from "@/components/dashboard-ai-search";
 import { MatchedOpportunityList } from "@/components/matched-opportunity-list";
 import { isAiAvailable } from "@/lib/ai/client";
-import { opportunityService } from "@/lib/opportunities/service";
+import { freshnessLabel, listSyncStates, searchCachedOpportunities } from "@/lib/opportunities/cache";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { listActiveBidWorkspaces } from "@/lib/repositories/bid-workspace";
 import { listSaved } from "@/lib/repositories/saved";
@@ -14,11 +14,11 @@ import { connection } from "next/server";
 export const runtime = "nodejs";
 export default async function Dashboard() {
   await connection();
-  const [result, auth] = await Promise.all([
-    opportunityService.search({ limit: 15 }),
-    getAuthenticatedUser(),
-  ]);
-  const issues = result.health?.filter((x) => x.status !== "ok") ?? [];
+  const auth = await getAuthenticatedUser();
+  const [result, syncStates] = auth.client ? await Promise.all([
+    searchCachedOpportunities(auth.client, { limit: 50 }),
+    listSyncStates(auth.client),
+  ]) : [{ items: [], total: 0 }, []];
   const [workspaces, saved, suppliers, profile] =
     auth.client && auth.user
       ? await Promise.all([
@@ -96,20 +96,13 @@ export default async function Dashboard() {
             </span>
             <h2>Recommended for you</h2>
           </div>
-          {result.items.length ? <span>Ranked from {result.items.length} unified notices</span> : null}
+          {result.items.length ? <span>{freshnessLabel(syncStates)} · ranked from {result.items.length} notices</span> : null}
         </div>
-        {result.items.length && issues.length ? (
-          <div className="provider-warning compact">
-            Some sources are temporarily unavailable. Showing results from
-            working sources.
-          </div>
-        ) : null}
         {!result.items.length ? (
           <div className="state-card">
-            <b>No live recommendations are available right now.</b>
+            <b>No matching opportunities found.</b>
             <p>
-              Try Opportunities with a specific source, or check again shortly.
-              IPO never fabricates notices.
+              Broaden your company profile or check again after the next data refresh.
             </p>
           </div>
         ) : (

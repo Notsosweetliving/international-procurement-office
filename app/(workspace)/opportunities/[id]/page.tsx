@@ -11,7 +11,7 @@ import {
   formatDate,
   deadlineStatus,
 } from "@/lib/opportunities/format";
-import { opportunityService } from "@/lib/opportunities/service";
+import { getCachedOpportunity } from "@/lib/opportunities/cache";
 import type { Opportunity } from "@/lib/opportunities/types";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { getPersistedAnalysis } from "@/lib/repositories/analysis";
@@ -24,24 +24,14 @@ export async function generateMetadata({
   params,
 }: PageProps<"/opportunities/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const o = await opportunityService.getById(id);
-  return o
-    ? {
-        title: o.title,
-        description: o.summary,
-        openGraph: { title: o.title, description: o.summary, images: [] },
-        twitter: { title: o.title, description: o.summary, images: [] },
-      }
-    : {};
+  return { title: `Opportunity ${id}`, description: "Procurement opportunity in IPO." };
 }
 export default async function Detail({
   params,
 }: PageProps<"/opportunities/[id]">) {
   const { id } = await params;
-  const [o, auth] = await Promise.all([
-    opportunityService.getById(id),
-    getAuthenticatedUser(),
-  ]);
+  const auth = await getAuthenticatedUser();
+  const o = auth.client ? await getCachedOpportunity(auth.client, id).catch(() => null) : null;
   if (!o) notFound();
   const [saved, persisted, bidWorkspace, profile] =
     auth.client && auth.user

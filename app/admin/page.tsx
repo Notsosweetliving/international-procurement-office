@@ -8,6 +8,7 @@ import {
 } from "@/lib/opportunities/diagnostics";
 import { ProviderDiagnosticsPanel } from "@/components/provider-diagnostics-panel";
 import { serverLog } from "@/lib/monitoring/logger";
+import { IngestionStatusPanel } from "@/components/ingestion-status-panel";
 
 export const runtime = "nodejs";
 export default async function Admin() {
@@ -30,6 +31,8 @@ export default async function Admin() {
     savedSearches: null,
     subscriptions: null,
   };
+  let syncStates: import("@/lib/opportunities/cache").SyncState[] = [];
+  const cacheCounts: Record<string, number> = {};
   if (url && key) {
     const db = createClient(url, key, { auth: { persistSession: false } }),
       queries = await Promise.all([
@@ -55,6 +58,12 @@ export default async function Admin() {
     metrics.aiUsage = queries[3].count;
     metrics.savedSearches = queries[4].count;
     metrics.subscriptions = queries[5].count;
+    const [stateResult, ...countResults] = await Promise.all([
+      db.from("procurement_source_sync_state").select("*"),
+      ...["TED", "UK", "SAM"].map((source) => db.from("procurement_opportunities").select("id", { count: "exact", head: true }).eq("source", source)),
+    ]);
+    syncStates = stateResult.data ?? [];
+    ["TED", "UK", "SAM"].forEach((source, index) => { cacheCounts[source] = countResults[index].count ?? 0; });
   }
   return (
     <main className="admin-page">
@@ -99,6 +108,7 @@ export default async function Admin() {
         initial={diagnostics}
         configuration={providerConfiguration()}
       />
+      <IngestionStatusPanel initial={syncStates} counts={cacheCounts} />
     </main>
   );
 }

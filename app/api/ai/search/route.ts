@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { searchRequestSchema } from "@/lib/ai/schemas";
 import { allowAiRequest } from "@/lib/ai/rate-limit";
 import { parseSearchIntent } from "@/lib/ai/search-intent";
-import { opportunityService } from "@/lib/opportunities/service";
+import { searchCachedOpportunities } from "@/lib/opportunities/cache";
 import { calculateOpportunityMatch } from "@/lib/matching/engine";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import { getCompanyProfile } from "@/lib/repositories/company";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const keyword =
     [...(intent.keywords ?? []), ...(intent.categories ?? [])].join(" ") ||
     parsed.data.query;
-  const result = await opportunityService.search({
+  const result = await searchCachedOpportunities(client, {
     query: keyword,
     sources: intent.sources,
     limit: 20,
