@@ -33,6 +33,32 @@ body {
   background: var(--navy);
   color: #fff;
 }
+.original-notice-card {
+  display: grid;
+  gap: 14px;
+}
+.original-notice-card .section-label,
+.original-notice-card p,
+.original-notice-card .external-button {
+  margin: 0;
+}
+.original-notice-card > small {
+  padding-top: 2px;
+}
+.view-all-results {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 11px 15px;
+  border: 1px solid var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+}
+.view-all-results svg { width: 16px; }
+.search-context-note { color: var(--muted); font-size: 12px; }
+.load-more-row { display: flex; justify-content: center; margin-top: 26px; }
+.load-more-row a { border: 1px solid var(--navy); padding: 12px 20px; font-size: 12px; font-weight: 700; }
 .black-button:hover,
 .landing nav a:last-child:hover,
 .hero-actions a:first-child:hover {

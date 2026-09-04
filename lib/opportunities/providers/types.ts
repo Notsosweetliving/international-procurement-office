@@ -8,7 +8,9 @@ export interface OpportunitySearchParams {
   limit?: number;
   minValue?: number;
   maxValue?: number;
+  currency?: string;
   deadlineBefore?: string;
+  closingWithinDays?: number;
   sort?: "newest" | "deadline" | "value_desc";
 }
 export interface ProviderHealth {

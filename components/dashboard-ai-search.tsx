@@ -5,6 +5,7 @@ import type { ProcurementSearchIntent } from "@/lib/ai/schemas";
 import { useCompanyProfile } from "./use-company-profile";
 import { MatchedOpportunityList } from "./matched-opportunity-list";
 import { Icon } from "./icons";
+import Link from "next/link";
 export function DashboardAiSearch({ available }: { available: boolean }) {
   const { profile } = useCompanyProfile();
   const [query, setQuery] = useState("");
@@ -12,6 +13,8 @@ export function DashboardAiSearch({ available }: { available: boolean }) {
   const [intent, setIntent] = useState<ProcurementSearchIntent | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [viewAllQuery, setViewAllQuery] = useState("");
+  const [mixedCurrencies, setMixedCurrencies] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!available || loading || query.trim().length < 2) return;
@@ -27,6 +30,8 @@ export function DashboardAiSearch({ available }: { available: boolean }) {
       if (!r.ok) throw new Error(data.error);
       setItems(data.items);
       setIntent(data.intent);
+      setViewAllQuery(data.viewAllQuery ?? "");
+      setMixedCurrencies(Boolean(data.mixedCurrencies));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Search failed.");
     } finally {
@@ -76,11 +81,12 @@ export function DashboardAiSearch({ available }: { available: boolean }) {
               <span className="section-label">INTERPRETED SEARCH</span>
               <h2>{items.length} opportunities found</h2>
             </div>
-            <span>
-              {intent?.keywords?.join(", ") || "Structured TED search"}
-            </span>
+            <span>{intent?.keywords?.join(", ") || "Structured cached search"}</span>
           </div>
+          {mixedCurrencies ? <p className="search-context-note">Values shown in their disclosed currencies; no conversion applied.</p> : null}
           <MatchedOpportunityList items={items} />
+          {viewAllQuery ? <Link className="view-all-results" href={`/opportunities?${viewAllQuery}`}>View all results <Icon name="arrow" /></Link> : null}
+          {!items.length ? <div className="state-card"><b>No opportunities meet all of those constraints.</b><p>Try broadening a category, region, or value range.</p></div> : null}
         </section>
       ) : null}
     </>

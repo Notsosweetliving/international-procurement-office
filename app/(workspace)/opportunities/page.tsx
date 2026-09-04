@@ -23,7 +23,8 @@ export default async function Opportunities(
 ) {
   const params = await props.searchParams;
   const q = typeof params.q === "string" ? params.q : "",
-    source = typeof params.source === "string" ? params.source : "all";
+    source = typeof params.source === "string" ? params.source : "all",
+    visible = Math.min(100, Math.max(50, Number(typeof params.limit === "string" ? params.limit : 50) || 50));
   return (
     <div className="page">
       <header className="page-header">
@@ -57,19 +58,29 @@ export default async function Opportunities(
         <button type="submit">Search</button>
       </form>
       <Suspense fallback={<Loading />}>
-        <Results q={q} source={source} />
+        <Results q={q} source={source} params={params} visible={visible} />
       </Suspense>
     </div>
   );
 }
-async function Results({ q, source }: { q: string; source: string }) {
+const listParam = (value: string | string[] | undefined) => typeof value === "string" ? value.split(",").map((item) => item.trim()).filter(Boolean) : undefined;
+const numberParam = (value: string | string[] | undefined) => typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)) ? Number(value) : undefined;
+async function Results({ q, source, params, visible }: { q: string; source: string; params: Awaited<PageProps<"/opportunities">["searchParams"]>; visible: number }) {
   await connection();
   const auth = await getAuthenticatedUser();
+  const closingWithinDays = numberParam(params.closingWithinDays);
   const [result, states] = auth.client ? await Promise.all([
     searchCachedOpportunities(auth.client, {
       query: q,
       sources: validSource(source),
-      limit: 20,
+      countries: listParam(params.countries),
+      categories: listParam(params.categories),
+      minValue: numberParam(params.minValue),
+      maxValue: numberParam(params.maxValue),
+      currency: typeof params.currency === "string" ? params.currency : undefined,
+      closingWithinDays,
+      sort: params.sort === "closing_soon" ? "deadline" : params.sort === "highest_value" ? "value_desc" : "newest",
+      limit: visible,
     }),
     listSyncStates(auth.client),
   ]) : [{ items: [], total: 0 }, []];
@@ -86,6 +97,9 @@ async function Results({ q, source }: { q: string; source: string }) {
   const title = q
     ? `${q[0]?.toUpperCase() ?? ""}${q.slice(1)} opportunities`
     : "Procurement opportunities";
+  const loadMoreParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (typeof value === "string") loadMoreParams.set(key, value);
+  loadMoreParams.set("limit", String(Math.min(100, visible + 50)));
   return (
     <>
       <div className="source-pills">
@@ -105,7 +119,7 @@ async function Results({ q, source }: { q: string; source: string }) {
           <h2>{title}</h2>
           <p>
             {result.items.length
-              ? `${result.items.length} cached procurement results`
+              ? `${result.total} cached procurement result${result.total === 1 ? "" : "s"}`
               : "No matching opportunities found"}
           </p>
         </div>
@@ -130,6 +144,11 @@ async function Results({ q, source }: { q: string; source: string }) {
           </p>
         </div>
       )}
+      {result.items.length && result.total > visible && visible < 100 ? (
+        <div className="load-more-row">
+          <a href={`/opportunities?${loadMoreParams}`}>Load more opportunities</a>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -12,9 +12,15 @@
   border: 1px solid #d6d3ca;
   padding: 40px;
 }
+.auth-identity {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-bottom: 42px;
+  text-align: center;
+}
 .auth-card .brand {
-  display: inline-flex;
-  margin-bottom: 56px;
+  display: flex;
 }
 .auth-card h1 {
   font-size: 38px;

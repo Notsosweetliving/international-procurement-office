@@ -12,7 +12,7 @@ export default async function Dashboard() {
   await connection();
   const auth = await getAuthenticatedUser();
   const [result, syncStates] = auth.client ? await Promise.all([
-    searchCachedOpportunities(auth.client, { limit: 50 }),
+    searchCachedOpportunities(auth.client, { limit: 200 }),
     listSyncStates(auth.client),
   ]) : [{ items: [], total: 0 }, []];
   const profile =

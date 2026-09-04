@@ -20,8 +20,10 @@ export function AuthForm({
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <Brand />
-        <span className="section-label">PRIVATE PROCUREMENT WORKSPACE</span>
+        <div className="auth-identity">
+          <Brand />
+          <span className="section-label">PRIVATE PROCUREMENT WORKSPACE</span>
+        </div>
         <h1>{mode === "login" ? "Welcome back" : "Create your workspace"}</h1>
         <p>
           {mode === "login"

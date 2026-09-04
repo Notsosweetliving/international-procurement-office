@@ -61,20 +61,22 @@ export function cacheRowToOpportunity(row: CacheRow): Opportunity {
 }
 
 export async function searchCachedOpportunities(client: SupabaseClient<Database>, params: OpportunitySearchParams = {}): Promise<OpportunitySearchResult> {
-  const limit = Math.min(100, Math.max(1, params.limit ?? 20));
-  let query = client.from("procurement_opportunities").select("*").eq("is_active", true);
+  const limit = Math.min(200, Math.max(1, params.limit ?? 20));
+  let query = client.from("procurement_opportunities").select("*", { count: "exact" }).eq("is_active", true);
   if (params.query?.trim()) query = query.textSearch("search_vector", params.query.trim(), { config: "english", type: "websearch" });
   if (params.sources?.length) query = query.in("source", params.sources.filter((x) => x !== "mock"));
   if (params.countries?.length) query = query.in("procurement_country", params.countries);
   if (params.categories?.length) query = query.in("category", params.categories);
   if (params.minValue != null) query = query.gte("estimated_value_max", params.minValue);
   if (params.maxValue != null) query = query.lte("estimated_value_min", params.maxValue);
-  if (params.deadlineBefore) query = query.lte("deadline_at", params.deadlineBefore);
+  if (params.currency) query = query.eq("currency", params.currency.toUpperCase());
+  const deadlineBefore = params.deadlineBefore ?? (params.closingWithinDays ? new Date(Date.now() + params.closingWithinDays * 86400000).toISOString() : undefined);
+  if (deadlineBefore) query = query.lte("deadline_at", deadlineBefore);
   query = params.sort === "deadline" ? query.order("deadline_at", { ascending: true, nullsFirst: false }) : params.sort === "value_desc" ? query.order("estimated_value_max", { ascending: false, nullsFirst: false }) : query.order("published_at", { ascending: false, nullsFirst: false });
-  const { data, error } = await query.range((Math.max(1, params.page ?? 1) - 1) * limit, Math.max(1, params.page ?? 1) * limit - 1);
+  const { data, error, count } = await query.range((Math.max(1, params.page ?? 1) - 1) * limit, Math.max(1, params.page ?? 1) * limit - 1);
   if (error) throw error;
   const items = (data ?? []).map(cacheRowToOpportunity);
-  return { items, total: items.length };
+  return { items, total: count ?? items.length };
 }
 
 export async function getCachedOpportunity(client: SupabaseClient<Database>, id: string) {

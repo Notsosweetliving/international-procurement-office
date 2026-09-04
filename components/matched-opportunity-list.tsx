@@ -43,7 +43,7 @@ export function MatchedOpportunityList({
       );
     if (sort === "value")
       list.sort((a, b) => (b.o.value ?? -1) - (a.o.value ?? -1));
-    return mode === "dashboard" ? list.slice(0, 6) : list;
+    return mode === "dashboard" ? list.slice(0, 10) : list;
   }, [ranked, minScore, sort, mode, profile]);
   if (!ready)
     return <div className="state-card">Preparing opportunity rankings…</div>;

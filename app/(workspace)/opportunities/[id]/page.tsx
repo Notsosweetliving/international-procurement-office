@@ -140,7 +140,7 @@ export default async function Detail({
               {o.buyer.country}
             </p>
           </Side>
-          <Side label="ORIGINAL NOTICE">
+          <Side label="ORIGINAL NOTICE" className="original-notice-card">
             <p>
               {sourceName(o)} reference {o.reference}
             </p>
@@ -151,7 +151,7 @@ export default async function Detail({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Open official source ↗
+                Open official notice
               </a>
             ) : null}
             <small>Source: {sourceName(o)}</small>
@@ -191,12 +191,14 @@ function Section({
 function Side({
   label,
   children,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="side-card">
+    <div className={`side-card${className ? ` ${className}` : ""}`}>
       <span className="section-label">{label}</span>
       {children}
     </div>

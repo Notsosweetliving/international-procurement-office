@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Brand } from "@/components/app-shell";
 import { Icon } from "@/components/icons";
-export default function Home() {
+import { getAuthenticatedUser } from "@/lib/supabase/server";
+export default async function Home() {
+  const { user } = await getAuthenticatedUser();
   return (
     <main className="landing">
       <header>
@@ -9,7 +11,7 @@ export default function Home() {
         <nav>
           <a href="#platform">Sources</a>
           <a href="#how">How it works</a>
-          <Link href="/dashboard">Open workspace</Link>
+          <Link href={user ? "/dashboard" : "/login"}>{user ? "Open workspace" : "Login / Sign up"}</Link>
         </nav>
       </header>
       <section className="hero">
