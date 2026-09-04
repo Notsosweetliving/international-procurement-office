@@ -6,9 +6,7 @@ import Image from "next/image";
 const nav = [
   ["grid", "Intelligence", "/dashboard"],
   ["search", "Opportunities", "/opportunities"],
-  ["building", "Suppliers", "/suppliers"],
   ["bookmark", "Saved", "/saved"],
-  ["search", "Searches", "/saved-searches"],
   ["building", "Company", "/company"],
 ];
 export function Brand() {
@@ -73,7 +71,7 @@ export function AppShell({
           {nav.map(([i, l, h]) => (
             <Link href={h} key={h}>
               <Icon name={i} />
-              <small>{h === "/saved-searches" ? "History" : l}</small>
+              <small>{l}</small>
             </Link>
           ))}
         </nav>
