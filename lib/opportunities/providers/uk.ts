@@ -10,17 +10,14 @@ import {
   fetchProviderJson,
   ProviderRequestError,
 } from "../diagnostics";
-const BASE = (
-  process.env.UK_FTS_API_BASE_URL ??
-  "https://www.find-tender.service.gov.uk/api/1.0"
-).replace(/\/$/, "");
+import { ukFtsUrl } from "../provider-urls";
 type Obj = Record<string, unknown>;
 const releases = (data: unknown) =>
   data && typeof data === "object" && Array.isArray((data as Obj).releases)
     ? ((data as Obj).releases as unknown[])
     : [];
 async function request(path: string) {
-  return fetchProviderJson("UK", BASE + path, {
+  return fetchProviderJson("UK", ukFtsUrl(path), {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(12000),
     next: { revalidate: 1200 },

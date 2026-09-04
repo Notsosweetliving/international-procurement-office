@@ -9,6 +9,10 @@ import {
   safeUpstreamUrl,
 } from "../lib/opportunities/diagnostics.ts";
 import { canAccessProviderDiagnostics } from "../lib/admin/access.ts";
+import {
+  tedSearchUrl,
+  ukFtsUrl,
+} from "../lib/opportunities/provider-urls.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -110,6 +114,45 @@ test("admin diagnostics require an allowlisted admin and Node runtime", async ()
 test("safe URLs redact secret query parameters", () => {
   const safe = safeUpstreamUrl("https://example.test/search?api_key=secret&limit=2");
   assert.doesNotMatch(safe, /secret/);
+  assert.doesNotMatch(safe, /api_key/);
   assert.match(safe, /limit=2/);
 });
 
+for (const [label, value] of [
+  ["undefined", undefined],
+  ["empty", ""],
+  ["whitespace", "   "],
+] as const) {
+  test(`TED ${label} environment override uses the official fallback`, () => {
+    assert.equal(tedSearchUrl(value), "https://api.ted.europa.eu/v3/notices/search");
+  });
+}
+
+for (const [label, value] of [
+  ["undefined", undefined],
+  ["empty", ""],
+  ["whitespace", "   "],
+] as const) {
+  test(`UK ${label} environment override uses the official fallback`, () => {
+    assert.equal(
+      ukFtsUrl("/ocdsReleasePackages?limit=2&stages=tender", value),
+      "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?limit=2&stages=tender",
+    );
+  });
+}
+
+test("valid default provider URLs survive sanitization", () => {
+  assert.equal(
+    safeUpstreamUrl("https://api.ted.europa.eu/v3/notices/search"),
+    "https://api.ted.europa.eu/v3/notices/search",
+  );
+  assert.equal(
+    safeUpstreamUrl("https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages"),
+    "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages",
+  );
+});
+
+test("undefined and malformed URLs are rejected by safe logging", () => {
+  assert.equal(safeUpstreamUrl(undefined), "invalid-upstream-url");
+  assert.equal(safeUpstreamUrl("not a url"), "invalid-upstream-url");
+});

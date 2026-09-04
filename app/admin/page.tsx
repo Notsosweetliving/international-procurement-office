@@ -7,11 +7,18 @@ import {
   providerConfiguration,
 } from "@/lib/opportunities/diagnostics";
 import { ProviderDiagnosticsPanel } from "@/components/provider-diagnostics-panel";
+import { serverLog } from "@/lib/monitoring/logger";
 
 export const runtime = "nodejs";
 export default async function Admin() {
   const { user } = await getAuthenticatedUser();
-  if (!user || !isAdminEmail(user.email)) notFound();
+  const matchesAdminList = isAdminEmail(user?.email);
+  serverLog("info", "admin_route_reached", {
+    authenticated: user ? "yes" : "no",
+    admin_emails_configured: process.env.ADMIN_EMAILS?.trim() ? "yes" : "no",
+    current_user_matches_admin_list: matchesAdminList ? "yes" : "no",
+  });
+  if (!user || !matchesAdminList) notFound();
   const diagnostics = await getLastProviderDiagnostics();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
     key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -90,7 +97,7 @@ export default async function Admin() {
       </section>
       <ProviderDiagnosticsPanel
         initial={diagnostics}
-        configured={providerConfiguration()}
+        configuration={providerConfiguration()}
       />
     </main>
   );

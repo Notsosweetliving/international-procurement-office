@@ -7,10 +7,10 @@ const PROVIDERS = ["TED", "UK", "SAM", "NATO"] as const;
 
 export function ProviderDiagnosticsPanel({
   initial,
-  configured,
+  configuration,
 }: {
   initial: ProviderDiagnostic[];
-  configured: Record<(typeof PROVIDERS)[number], boolean>;
+  configuration: Record<string, boolean>;
 }) {
   const [rows, setRows] = useState(initial);
   const [running, setRunning] = useState(false);
@@ -50,7 +50,13 @@ export function ProviderDiagnosticsPanel({
             <article key={provider}>
               <h3>{provider}</h3>
               <dl>
-                <div><dt>Configured</dt><dd>{configured[provider] ? "Yes" : "No"}</dd></div>
+                <div><dt>Provider configured</dt><dd>{configuration[provider] ? "Yes" : "No"}</dd></div>
+                {provider === "TED" || provider === "UK" ? (
+                  <>
+                    <div><dt>Custom base URL</dt><dd>{configuration[provider === "TED" ? "TED_API_BASE_URL" : "UK_FTS_API_BASE_URL"] ? "Yes" : "No"}</dd></div>
+                    <div><dt>Using default endpoint</dt><dd>{configuration[provider === "TED" ? "TED_API_BASE_URL" : "UK_FTS_API_BASE_URL"] ? "No" : "Yes"}</dd></div>
+                  </>
+                ) : null}
                 <div><dt>Last status</dt><dd>{row ? (row.status === "ok" ? "OK" : "Failed") : "Not checked"}</dd></div>
                 <div><dt>Upstream status</dt><dd>{row?.upstreamStatus ?? "—"}</dd></div>
                 <div><dt>Raw results</dt><dd>{row?.rawCount ?? "—"}</dd></div>

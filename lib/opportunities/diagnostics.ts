@@ -26,16 +26,22 @@ export class ProviderRequestError extends Error {
   }
 }
 
-export function safeUpstreamUrl(value: string) {
+export function safeUpstreamUrl(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return "invalid-upstream-url";
   try {
-    const url = new URL(value);
+    const url = new URL(value.trim());
+    if (url.protocol !== "https:") return "invalid-upstream-url";
     for (const key of [...url.searchParams.keys()]) {
-      if (/key|token|secret|auth/i.test(key)) url.searchParams.set(key, "[redacted]");
+      if (/key|token|secret|auth/i.test(key)) url.searchParams.delete(key);
     }
     return url.toString();
   } catch {
     return "invalid-upstream-url";
   }
+}
+
+export function providerBaseUrl(value: string | undefined, fallback: string) {
+  return (value?.trim() || fallback).replace(/\/+$/, "");
 }
 
 export function providerConfiguration() {

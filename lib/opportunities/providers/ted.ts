@@ -11,9 +11,7 @@ import {
   fetchProviderJson,
   ProviderRequestError,
 } from "../diagnostics";
-const BASE = (
-  process.env.TED_API_BASE_URL ?? "https://api.ted.europa.eu"
-).replace(/\/$/, "");
+import { tedSearchUrl } from "../provider-urls";
 const FIELDS = [
   "publication-number",
   "notice-title",
@@ -45,7 +43,7 @@ async function request(
   page: number,
   limit: number,
 ): Promise<{ data: TedSearchResponse; context: Awaited<ReturnType<typeof fetchProviderJson>>["context"] }> {
-  const { data, context } = await fetchProviderJson("TED", `${BASE}/v3/notices/search`, {
+  const { data, context } = await fetchProviderJson("TED", tedSearchUrl(), {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
