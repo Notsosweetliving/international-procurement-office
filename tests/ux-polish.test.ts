@@ -11,10 +11,9 @@ test("institutional chrome uses a globe, support links and careful independence 
   assert.doesNotMatch(chrome, /🇺🇸|🇬🇧|🇪🇺/);
 });
 
-test("homepage uses the shared public footer without exposing Settings", () => {
+test("homepage uses the shared footer and supplies auth-aware Settings state", () => {
   const home = readFileSync("app/page.tsx", "utf8");
-  assert.match(home, /<SiteFooter \/>/);
-  assert.doesNotMatch(home, /<SiteFooter authenticated/);
+  assert.match(home, /<SiteFooter authenticated=\{Boolean\(user\)\} \/>/);
   assert.match(home, /user \? "Open workspace" : "Login \/ Sign up"/);
 });
 
@@ -29,6 +28,35 @@ test("language selector is accessible, English-only, and contains no flags", () 
   assert.match(selector, /Coming soon/);
   assert.match(selector, /disabled/);
   assert.doesNotMatch(selector, /🇬🇧|🇫🇷|🇩🇪|🇪🇸|🇮🇹|🇵🇹|flag/i);
+});
+
+test("language menu closes for outside pointers, Escape, and current-language selection", () => {
+  const selector = readFileSync("components/language-selector.tsx", "utf8");
+  assert.match(selector, /document\.addEventListener\("pointerdown", closeOutside\)/);
+  assert.match(selector, /document\.removeEventListener\("pointerdown", closeOutside\)/);
+  assert.match(selector, /rootRef\.current\?\.contains\(event\.target as Node\)/);
+  assert.match(selector, /event\.key === "Escape"/);
+  assert.match(selector, /aria-checked="true" onClick=\{\(\) => setOpen\(false\)\}/);
+});
+
+test("footer exposes institutional text links and routes Settings by auth state", () => {
+  const chrome = readFileSync("components/site-chrome.tsx", "utf8");
+  for (const label of ["Contact", "FAQ", "Settings", "Terms", "Privacy Policy"])
+    assert.match(chrome, new RegExp(`>${label}<`));
+  assert.match(chrome, /authenticated \? "\/settings" : "\/login"/);
+  assert.match(chrome, /<nav aria-label="Footer">/);
+  assert.doesNotMatch(chrome, /black-button|ghost-button|large-button/);
+});
+
+test("required public and account routes exist with substantive policy content", () => {
+  for (const route of ["contact", "faq", "terms", "privacy", "(workspace)/settings"])
+    assert.doesNotThrow(() => readFileSync(`app/${route}/page.tsx`, "utf8"));
+  const terms = readFileSync("app/terms/page.tsx", "utf8");
+  const privacy = readFileSync("app/privacy/page.tsx", "utf8");
+  for (const heading of ["Acceptance", "Permitted use", "AI-assisted content", "Account termination"])
+    assert.match(terms, new RegExp(heading));
+  for (const heading of ["Information we handle", "Service providers", "Marketing email choice", "Account deletion"])
+    assert.match(privacy, new RegExp(heading));
 });
 
 test("opportunity actions share one responsive footprint with padded mobile spacing", () => {

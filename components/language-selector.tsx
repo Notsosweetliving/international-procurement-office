@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "./icons";
 
 const futureLanguages = ["French", "German", "Spanish", "Italian", "Portuguese"];
@@ -8,8 +8,18 @@ const futureLanguages = ["French", "German", "Spanish", "Italian", "Portuguese"]
 export function LanguageSelector() {
   const [open, setOpen] = useState(false);
   const menuId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [open]);
   return (
     <div
+      ref={rootRef}
       className="language-selector"
       onKeyDown={(event) => {
         if (event.key === "Escape") setOpen(false);
@@ -29,7 +39,7 @@ export function LanguageSelector() {
       </button>
       {open ? (
         <div className="language-menu" id={menuId} role="menu" aria-label="Available languages">
-          <button type="button" role="menuitemradio" aria-checked="true">
+          <button type="button" role="menuitemradio" aria-checked="true" onClick={() => setOpen(false)}>
             English <span>Current</span>
           </button>
           {futureLanguages.map((language) => (

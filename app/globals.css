@@ -1388,6 +1388,7 @@ button {
 .site-footer > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .site-footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 .site-footer a { color: var(--navy); }
+.site-footer a:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
 .site-footer > a { display: inline-block; margin-top: 10px; }
 .site-footer p { margin: 8px 0 0; max-width: 760px; line-height: 1.5; }
 .language-selector { position: relative; width: max-content; margin-top: 12px; }
@@ -1412,6 +1413,7 @@ button {
   left: 0;
   bottom: calc(100% + 6px);
   width: 220px;
+  max-width: calc(100vw - 40px);
   padding: 5px;
   border: 1px solid #b9b6ad;
   background: #fff;
@@ -1444,6 +1446,9 @@ button {
 .public-info details:last-child { border-bottom: 1px solid var(--line); }
 .public-info details summary { font-weight: 700; cursor: pointer; }
 .public-info details p { margin: 10px 0 0; }
+.policy-section { border-top: 1px solid var(--line); padding: 20px 0 4px; }
+.policy-section h2 { margin: 0 0 7px; font-size: 18px; }
+.policy-section p { margin: 0; }
 
 @media (max-width: 767px) {
   .official-banner summary { padding-inline: 18px; }
