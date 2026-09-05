@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Brand } from "@/components/app-shell";
 import { Icon } from "@/components/icons";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { OfficialBanner, SiteFooter } from "@/components/site-chrome";
 export default async function Home() {
   const { user } = await getAuthenticatedUser();
   return (
     <main className="landing">
+      <OfficialBanner />
       <header>
         <Brand />
         <nav>
@@ -81,10 +83,7 @@ export default async function Home() {
           <span key={item}>{item}</span>
         ))}
       </section>
-      <footer className="landing-footer">
-        <span>INDEPENDENT PROCUREMENT INTELLIGENCE</span>
-        <p>International Procurement Office is an independent procurement intelligence platform and is not affiliated with or endorsed by any government agency.</p>
-      </footer>
+      <SiteFooter authenticated={Boolean(user)} />
     </main>
   );
 }

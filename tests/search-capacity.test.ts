@@ -47,11 +47,15 @@ test("AI search uses 200 candidates, one conservative fallback and at most 25 pr
 
 test("opportunities start at 50, load to 100, and dashboard ranks a 200-record pool to top 10", () => {
   const opportunities = readFileSync("app/(workspace)/opportunities/page.tsx", "utf8");
+  const results = readFileSync("components/opportunity-results.tsx", "utf8");
+  const cacheRoute = readFileSync("app/api/opportunities/route.ts", "utf8");
   const dashboard = readFileSync("app/(workspace)/dashboard/page.tsx", "utf8");
   const list = readFileSync("components/matched-opportunity-list.tsx", "utf8");
-  assert.match(opportunities, /Math\.max\(50/);
-  assert.match(opportunities, /Load more opportunities/);
-  assert.match(opportunities, /Math\.min\(100, visible \+ 50\)/);
+  assert.match(opportunities, /visible = 50/);
+  assert.match(results, /Load more opportunities/);
+  assert.match(results, /setItems/);
+  assert.match(results, /offset.*items\.length/);
+  assert.match(cacheRoute, /searchCachedOpportunities/);
   assert.match(dashboard, /limit: 200/);
   assert.match(list, /list\.slice\(0, 10\)/);
 });

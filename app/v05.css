@@ -93,25 +93,38 @@
 }
 .opportunity-card {
   position: relative;
-  display: block !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 172px;
   padding: 0 !important;
 }
 .opportunity-card .card-link {
   display: grid;
-  grid-template-columns: 95px 1fr 24px;
+  grid-template-columns: 95px minmax(0, 1fr);
   gap: 22px;
   padding: 24px;
   color: inherit;
   text-decoration: none;
 }
 .card-save {
-  position: absolute;
-  right: 52px;
-  top: 18px;
   border: 1px solid #aaa79f;
   background: #fff;
   padding: 7px 10px;
-  z-index: 2;
+  width: 116px;
+}
+.card-actions {
+  border-left: 1px solid #e1dfd8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 18px 14px;
+}
+.card-arrow-link {
+  color: inherit;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  min-height: 40px;
 }
 .card-save.saved {
   background: #111;
@@ -166,13 +179,16 @@
     padding: 18px;
     gap: 12px;
   }
-  .opportunity-card .card-arrow {
-    display: none;
+  .opportunity-card { grid-template-columns: 1fr; }
+  .card-actions {
+    border-left: 0;
+    border-top: 1px solid #e1dfd8;
+    justify-content: stretch;
+    padding: 0 18px 16px;
   }
   .card-save {
-    position: static;
-    width: calc(100% - 36px);
-    margin: 0 18px 16px;
+    width: 100%;
+    margin: 0;
   }
   .opportunity-card .opportunity-body {
     min-width: 0;

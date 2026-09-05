@@ -9,9 +9,15 @@ import {
 import { ProviderDiagnosticsPanel } from "@/components/provider-diagnostics-panel";
 import { serverLog } from "@/lib/monitoring/logger";
 import { IngestionStatusPanel } from "@/components/ingestion-status-panel";
+import {
+  getCustomerDirectory,
+  type CustomerDirectoryRow,
+} from "@/lib/admin/customer-directory";
 
 export const runtime = "nodejs";
-export default async function Admin() {
+export default async function Admin({
+  searchParams,
+}: PageProps<"/admin">) {
   const { user } = await getAuthenticatedUser();
   const matchesAdminList = isAdminEmail(user?.email);
   serverLog("info", "admin_route_reached", {
@@ -33,7 +39,10 @@ export default async function Admin() {
   };
   let syncStates: import("@/lib/opportunities/cache").SyncState[] = [];
   const cacheCounts: Record<string, number> = {};
+  let customers: CustomerDirectoryRow[] = [];
+  let directoryError = false;
   if (url && key) {
+    const params = await searchParams;
     const db = createClient(url, key, { auth: { persistSession: false } }),
       queries = await Promise.all([
         db.auth.admin.listUsers({ page: 1, perPage: 1 }),
@@ -64,6 +73,18 @@ export default async function Admin() {
     ]);
     syncStates = stateResult.data ?? [];
     ["TED", "UK", "SAM"].forEach((source, index) => { cacheCounts[source] = countResults[index].count ?? 0; });
+    try {
+      customers = await getCustomerDirectory(db, {
+        search: typeof params.customer === "string" ? params.customer : "",
+        signupDate: typeof params.signup === "string" ? params.signup : "",
+        marketing:
+          params.marketing === "yes" || params.marketing === "no"
+            ? params.marketing
+            : "all",
+      });
+    } catch {
+      directoryError = true;
+    }
   }
   return (
     <main className="admin-page">
@@ -83,6 +104,21 @@ export default async function Admin() {
           </article>
         ))}
       </div>
+      <section className="customer-directory">
+        <div className="directory-heading">
+          <div><h2>Users &amp; companies</h2><p>Private account directory. Last active uses the latest reliable authentication sign-in time.</p></div>
+          <strong>{customers.length} shown</strong>
+        </div>
+        <form className="directory-filters">
+          <label>Search<input name="customer" placeholder="Email or company" defaultValue={typeof (await searchParams).customer === "string" ? (await searchParams).customer : ""} /></label>
+          <label>Signup date<input name="signup" type="date" defaultValue={typeof (await searchParams).signup === "string" ? (await searchParams).signup : ""} /></label>
+          <label>Marketing<select name="marketing" defaultValue={typeof (await searchParams).marketing === "string" ? (await searchParams).marketing : "all"}><option value="all">All</option><option value="yes">Opted in</option><option value="no">Not opted in</option></select></label>
+          <button className="ghost-button">Apply filters</button>
+        </form>
+        {directoryError ? <p>Customer directory is temporarily unavailable.</p> : (
+          <div className="directory-table-wrap"><table><thead><tr><th>Email</th><th>Signup</th><th>Last active</th><th>Company</th><th>Country</th><th>Profile</th><th>Plan</th><th>Marketing emails</th></tr></thead><tbody>{customers.map((customer) => <tr key={customer.id}><td>{customer.email}</td><td>{new Date(customer.signupAt).toLocaleDateString()}</td><td>{customer.lastActiveAt ? new Date(customer.lastActiveAt).toLocaleDateString() : "—"}</td><td>{customer.company}</td><td>{customer.country}</td><td>{customer.completeness}%</td><td>{customer.plan.replace("_", " ")}</td><td>{customer.marketingOptIn ? "Opted in" : "Not opted in"}</td></tr>)}</tbody></table></div>
+        )}
+      </section>
       <section>
         <h2>Source health</h2>
         <div className="source-health">

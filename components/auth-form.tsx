@@ -53,6 +53,15 @@ export function AuthForm({
               required
             />
           </label>
+          {mode === "signup" ? (
+            <label className="consent-option">
+              <input name="marketingOptIn" type="checkbox" value="true" />
+              <span>
+                Receive occasional procurement intelligence, product updates and
+                IPO news. I can opt out at any time.
+              </span>
+            </label>
+          ) : null}
           {state.error || initialError ? (
             <div className="auth-error">{state.error ?? initialError}</div>
           ) : null}

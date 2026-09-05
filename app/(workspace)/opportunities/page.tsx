@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { MatchedOpportunityList } from "@/components/matched-opportunity-list";
+import { OpportunityResults } from "@/components/opportunity-results";
 import { freshnessLabel, listSyncStates, searchCachedOpportunities } from "@/lib/opportunities/cache";
 import type { OpportunitySource } from "@/lib/opportunities/types";
 import { Icon } from "@/components/icons";
@@ -24,7 +24,7 @@ export default async function Opportunities(
   const params = await props.searchParams;
   const q = typeof params.q === "string" ? params.q : "",
     source = typeof params.source === "string" ? params.source : "all",
-    visible = Math.min(100, Math.max(50, Number(typeof params.limit === "string" ? params.limit : 50) || 50));
+    visible = 50;
   return (
     <div className="page">
       <header className="page-header">
@@ -97,9 +97,8 @@ async function Results({ q, source, params, visible }: { q: string; source: stri
   const title = q
     ? `${q[0]?.toUpperCase() ?? ""}${q.slice(1)} opportunities`
     : "Procurement opportunities";
-  const loadMoreParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) if (typeof value === "string") loadMoreParams.set(key, value);
-  loadMoreParams.set("limit", String(Math.min(100, visible + 50)));
+  const appendParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (typeof value === "string") appendParams.set(key, value);
   return (
     <>
       <div className="source-pills">
@@ -132,10 +131,7 @@ async function Results({ q, source, params, visible }: { q: string; source: stri
         </span>
       </div>
       {result.items.length ? (
-        <MatchedOpportunityList
-          items={result.items}
-          workspaceStatuses={workspaceStatuses}
-        />
+        <OpportunityResults initialItems={result.items} total={result.total} query={appendParams.toString()} workspaceStatuses={workspaceStatuses} />
       ) : (
         <div className="state-card">
           <b>{source === "SAM" ? "US Federal data is temporarily delayed" : "No matching opportunities found."}</b>
@@ -144,11 +140,6 @@ async function Results({ q, source, params, visible }: { q: string; source: stri
           </p>
         </div>
       )}
-      {result.items.length && result.total > visible && visible < 100 ? (
-        <div className="load-more-row">
-          <a href={`/opportunities?${loadMoreParams}`}>Load more opportunities</a>
-        </div>
-      ) : null}
     </>
   );
 }

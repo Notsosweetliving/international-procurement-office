@@ -34,6 +34,7 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const inviteCode = String(form.get("inviteCode") ?? "").trim();
+  const marketingOptIn = form.get("marketingOptIn") === "true";
   if (!email || password.length < 8)
     return {
       error: "Enter a valid email and a password of at least 8 characters.",
@@ -78,7 +79,11 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   }
   let signup;
   try {
-    signup = await db.auth.signUp({ email, password });
+    signup = await db.auth.signUp({
+      email,
+      password,
+      options: { data: { marketing_opt_in: marketingOptIn } },
+    });
   } catch (error) {
     serverLog("error", "auth_sign_up_failed", {
       error: error instanceof Error ? error.message : "Unknown auth error",

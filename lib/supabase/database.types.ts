@@ -34,6 +34,8 @@ export interface Database {
         id: string;
         email: string;
         display_name: string | null;
+        marketing_opt_in: boolean;
+        marketing_opt_in_at: string | null;
         created_at: string;
         updated_at: string;
       }>;

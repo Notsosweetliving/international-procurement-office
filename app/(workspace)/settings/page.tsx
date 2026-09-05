@@ -7,10 +7,16 @@ import Link from "next/link";
 import { DeleteAccountButton } from "@/components/delete-account-button";
 import { BillingButton } from "@/components/billing-button";
 import { PasswordUpdate } from "@/components/password-update";
+import { updateMarketingConsent } from "@/app/settings-actions";
 export default async function Settings() {
   const { client, user } = await getAuthenticatedUser();
   if (!client || !user) return null;
   const profile = await getCompanyProfile(client, user.id);
+  const { data: accountProfile } = await client
+    .from("profiles")
+    .select("marketing_opt_in")
+    .eq("id", user.id)
+    .maybeSingle();
   return (
     <div className="page">
       <header className="page-header">
@@ -67,6 +73,20 @@ export default async function Settings() {
             Delivery remains queued until an email provider is configured.
           </p>
           <Link href="/saved-searches">Manage saved-search alerts →</Link>
+        </Setting>
+        <Setting title="COMMUNICATIONS">
+          <form action={updateMarketingConsent} className="consent-settings">
+            <label className="consent-option">
+              <input
+                name="marketingOptIn"
+                type="checkbox"
+                value="true"
+                defaultChecked={accountProfile?.marketing_opt_in ?? false}
+              />
+              <span>Receive occasional procurement intelligence, product updates and IPO news.</span>
+            </label>
+            <button className="ghost-button">Save communication preference</button>
+          </form>
         </Setting>
         <Setting title="AI">
           <p>

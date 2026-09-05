@@ -97,13 +97,21 @@ export function OpportunityCard({
             </div>
           ) : null}
         </div>
-        <Icon name="arrow" className="card-arrow" />
       </Link>
-      <SaveOpportunityButton
-        opportunityId={o.id}
-        initialSaved={saved}
-        className="card-save"
-      />
+      <div className="card-actions">
+        <SaveOpportunityButton
+          opportunityId={o.id}
+          initialSaved={saved}
+          className="card-save"
+        />
+        <Link
+          href={`/opportunities/${o.id}`}
+          className="card-arrow-link"
+          aria-label={`Open ${o.title}`}
+        >
+          <Icon name="arrow" className="card-arrow" />
+        </Link>
+      </div>
     </article>
   );
 }

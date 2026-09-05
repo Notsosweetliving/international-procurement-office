@@ -3,6 +3,7 @@ import type { CompanyProfile } from "@/lib/opportunities/types";
 import { CompanyProfileProvider } from "./use-company-profile";
 import { Icon } from "./icons";
 import Image from "next/image";
+import { SiteFooter } from "./site-chrome";
 const nav = [
   ["grid", "Intelligence", "/dashboard"],
   ["search", "Opportunities", "/opportunities"],
@@ -66,7 +67,7 @@ export function AppShell({
             <Icon name="search" />
           </Link>
         </div>
-        <main className="app-main">{children}</main>
+        <main className="app-main">{children}<SiteFooter authenticated /></main>
         <nav className="mobile-nav">
           {nav.map(([i, l, h]) => (
             <Link href={h} key={h}>

@@ -1,0 +1,3 @@
+import { Brand } from "@/components/app-shell";
+import { OfficialBanner, SiteFooter } from "@/components/site-chrome";
+export default function Privacy() { return <main className="public-info"><OfficialBanner /><header><Brand /><a href="/login">Login / Sign up</a></header><article><h1>Privacy</h1><p>IPO stores account, company, saved opportunity, and private workspace data only to provide its procurement intelligence service. Access is restricted through authenticated ownership controls.</p><p>Contact intelligence@internationalprocurementoffice.com for privacy questions or account-data requests.</p></article><SiteFooter /></main>; }

@@ -18,9 +18,10 @@ test("primary navigation contains exactly the four requested destinations", () =
 
 test("homepage includes institutional source, workflow and independence language", () => {
   const home = readFileSync("app/page.tsx", "utf8");
+  const chrome = readFileSync("components/site-chrome.tsx", "utf8");
   for (const copy of ["GLOBAL PROCUREMENT INTELLIGENCE", "Find the government", "Open workspace", "OFFICIAL PROCUREMENT SOURCES", "EU", "UK Government", "US Federal", "PROCUREMENT INTELLIGENCE", "Discover", "Qualify", "Analyse", "Pursue"])
     assert.match(home.toUpperCase(), new RegExp(copy.toUpperCase()));
-  assert.match(home, /not affiliated with or endorsed by any\s+government agency/i);
+  assert.match(chrome, /not affiliated with or endorsed by any\s+government agency/i);
 });
 
 test("mobile navigation is four equal safe-area-aware tap targets", () => {
