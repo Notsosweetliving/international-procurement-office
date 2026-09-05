@@ -1390,6 +1390,49 @@ button {
 .site-footer a { color: var(--navy); }
 .site-footer > a { display: inline-block; margin-top: 10px; }
 .site-footer p { margin: 8px 0 0; max-width: 760px; line-height: 1.5; }
+.language-selector { position: relative; width: max-content; margin-top: 12px; }
+.language-trigger {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid #b9b6ad;
+  background: transparent;
+  color: var(--navy);
+  font: 700 11px inherit;
+  cursor: pointer;
+}
+.language-trigger svg { width: 15px; height: 15px; }
+.language-trigger:focus-visible,
+.language-menu button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.language-menu {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  bottom: calc(100% + 6px);
+  width: 220px;
+  padding: 5px;
+  border: 1px solid #b9b6ad;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(12 35 53 / 14%);
+}
+.language-menu button {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  font: 600 11px inherit;
+  text-align: left;
+}
+.language-menu button:first-child { background: #edf1f3; }
+.language-menu button:disabled { color: #777; }
+.language-menu button span { color: #777; font-size: 9px; font-weight: 500; }
 .app-main > .site-footer { margin-top: auto; }
 .public-info { min-height: 100vh; background: #f3f1eb; display: flex; flex-direction: column; }
 .public-info > header { min-height: 78px; padding: 14px max(24px, calc((100% - 1160px) / 2)); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); background: #fff; }
@@ -1410,6 +1453,7 @@ button {
   .site-footer { padding: 22px 20px calc(88px + env(safe-area-inset-bottom)); }
   .site-footer > div { align-items: flex-start; flex-direction: column; gap: 12px; }
   .site-footer nav { gap: 14px; }
+  .language-selector { margin-top: 2px; }
   .public-info > article { margin: 44px auto; }
   .public-info > .site-footer { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
 }

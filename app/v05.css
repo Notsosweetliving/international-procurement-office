@@ -110,6 +110,7 @@
   background: #fff;
   padding: 7px 10px;
   width: 116px;
+  min-height: 38px;
 }
 .card-actions {
   border-left: 1px solid #e1dfd8;
@@ -184,10 +185,11 @@
     border-left: 0;
     border-top: 1px solid #e1dfd8;
     justify-content: stretch;
-    padding: 0 18px 16px;
+    padding: 18px;
   }
   .card-save {
-    width: 100%;
+    width: auto;
+    flex: 1 1 auto;
     margin: 0;
   }
   .opportunity-card .opportunity-body {

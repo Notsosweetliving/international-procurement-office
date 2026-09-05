@@ -11,6 +11,36 @@ test("institutional chrome uses a globe, support links and careful independence 
   assert.doesNotMatch(chrome, /🇺🇸|🇬🇧|🇪🇺/);
 });
 
+test("homepage uses the shared public footer without exposing Settings", () => {
+  const home = readFileSync("app/page.tsx", "utf8");
+  assert.match(home, /<SiteFooter \/>/);
+  assert.doesNotMatch(home, /<SiteFooter authenticated/);
+  assert.match(home, /user \? "Open workspace" : "Login \/ Sign up"/);
+});
+
+test("language selector is accessible, English-only, and contains no flags", () => {
+  const selector = readFileSync("components/language-selector.tsx", "utf8");
+  assert.match(selector, /aria-label="Select language"/);
+  assert.match(selector, /aria-haspopup="menu"/);
+  assert.match(selector, /<Icon name="globe"/);
+  assert.match(selector, /English/);
+  for (const language of ["French", "German", "Spanish", "Italian", "Portuguese"])
+    assert.match(selector, new RegExp(language));
+  assert.match(selector, /Coming soon/);
+  assert.match(selector, /disabled/);
+  assert.doesNotMatch(selector, /🇬🇧|🇫🇷|🇩🇪|🇪🇸|🇮🇹|🇵🇹|flag/i);
+});
+
+test("opportunity actions share one responsive footprint with padded mobile spacing", () => {
+  const card = readFileSync("components/opportunity-card.tsx", "utf8");
+  const css = readFileSync("app/v05.css", "utf8");
+  assert.match(card, /className="card-actions"/);
+  assert.match(card, /className="card-save"/);
+  assert.match(css, /\.card-save[\s\S]*min-height: 38px/);
+  assert.match(css, /\.card-actions[\s\S]*padding: 18px;/);
+  assert.match(css, /\.card-save[\s\S]*flex: 1 1 auto/);
+});
+
 test("marketing consent defaults off and records a timestamp only after opt-in", () => {
   const migration = readFileSync("supabase/migrations/202609050001_marketing_consent.sql", "utf8");
   const signup = readFileSync("components/auth-form.tsx", "utf8");

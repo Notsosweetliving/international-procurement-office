@@ -83,7 +83,7 @@ export default async function Home() {
           <span key={item}>{item}</span>
         ))}
       </section>
-      <SiteFooter authenticated={Boolean(user)} />
+      <SiteFooter />
     </main>
   );
 }
